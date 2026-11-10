@@ -6,6 +6,10 @@ Claude finds jobs, scores each one against your profile, writes a tailored resum
 
 There's no server to run and no AI key to buy. It works on your Claude plan.
 
+![The dashboard: a funnel of applications from applied to offer, and a week-by-week chart](docs/images/dashboard.png)
+
+The screenshots on this page show made-up demo data.
+
 ## What it does
 
 - **Finds jobs** on Indeed, LinkedIn and NaukriGulf, and from "we're hiring" posts you paste in.
@@ -14,6 +18,22 @@ There's no server to run and no AI key to buy. It works on your Claude plan.
 - **Finds the hiring contact** and drafts a personal message: to a hiring manager, a recruiter, someone you know, or a company that isn't hiring yet.
 - **Tracks every application** from saved to offer, with follow-up dates, interview dates and a history of each document.
 - **Writes a morning brief**: what to apply to, what to send and what to follow up today.
+
+## A look around
+
+**The board.** Every application in its stage, with apply-by dates, interview times and follow-ups that are due.
+
+![The applications board with columns To apply, Applied, Screening, Interview and Offer](docs/images/board.png)
+
+**One application.** The tailored resume as the real PDF page, with the cover letter, email, job posting, messages and notes in tabs.
+
+![An application page showing the tailored resume as a PDF page](docs/images/application.png)
+
+**How you match.** Each requirement in the listing is checked against your profile. A gap is shown as a gap.
+
+![The job posting next to a checklist of five requirements, four covered by the profile](docs/images/match.png)
+
+To try the dashboard with the demo data, run `npm run demo` and open `demo/index.html` in your browser. Nothing in the demo is saved.
 
 ## The rules it follows
 

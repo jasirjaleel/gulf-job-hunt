@@ -1,0 +1,141 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+// Demo stand-in for the claude.ai runtime, so the dashboard can run in any browser without an account.
+// Everything below is made up: the person, the companies, the contacts and the jobs. Nothing is saved;
+// changes last until the page is reloaded. `npm run demo` joins this file with dashboard/job-hunt.html.
+const now = new Date(), iso = d => new Date(now.getTime()+d*864e5).toISOString(), day = d => iso(d).slice(0,10);
+const hist = (...steps) => Object.fromEntries(steps.map(([s,d],i)=>["t"+(1000+i),{s,at:iso(d)}]));
+const app = (status, created, extra={}) => ({status, createdAt:iso(created), ...extra});
+
+const resume = `# Adam Kareem
+
+Junior Full-Stack Developer
+
++971 50 000 0000 | adam@example.com | Dubai, UAE | [GitHub](https://github.com/example)
+
+## Summary
+
+Full-stack developer with one year of experience building and shipping web apps end to end with Next.js, TypeScript and PostgreSQL. Comfortable owning a feature from the database to the interface.
+
+## Experience
+
+### Full-Stack Developer — Marina Labs | 2025 - 2026
+
+- Built a booking system used daily by a team of 12 to manage 1,000+ customer requests.
+- Cut the weekly reporting job from 40 minutes to 3 by moving it to scheduled database queries.
+- Added sign-in, roles and audit logs with Supabase and row-level security.
+
+### Web Developer Intern — Harbour Nine | 2024 - 2025
+
+- Rebuilt the marketing site in Next.js, bringing page load time under 1.5 seconds.
+- Wrote the contact and quote forms, with validation and email delivery.
+
+## Projects
+
+### Shift Planner
+
+- A scheduling app for small teams with drag-and-drop shifts and WhatsApp reminders.
+- Next.js, TypeScript, Supabase and n8n.
+
+### Invoice Reader
+
+- Reads PDF invoices and fills a spreadsheet, with a review step for anything unclear.
+- Python, FastAPI and PostgreSQL.
+
+## Education
+
+### BSc Computer Science — Example University | 2020 - 2024
+
+## Skills
+
+- Languages: TypeScript · JavaScript · Python · SQL
+- Frameworks: Next.js · React · Node.js · FastAPI
+- Data: PostgreSQL · Supabase
+- Tools: Git · Docker · n8n`;
+
+const cover = `Dear Hiring Team,
+
+I'm applying for the Junior Full-Stack Developer role at Palm Grid Technologies.
+
+Your listing asks for someone who can build features across Next.js and PostgreSQL. At Marina Labs I built a booking system on that stack that a team of 12 uses every day, and I added its sign-in, roles and audit logs.
+
+The listing also asks for Kubernetes experience. I haven't used it at work yet. I've deployed with Docker and I learn tools like this quickly.
+
+I live in Dubai and need no visa sponsorship.
+
+Kind regards,
+Adam Kareem`;
+
+const data = {
+  settings: {
+    profile: {
+      full_name:"Adam Kareem", email:"adam@example.com", phone:"+971 50 000 0000", linkedin_url:"", github_url:"https://github.com/example", portfolio_url:"",
+      target_roles:"Junior or mid full-stack developer, frontend developer (React, Next.js), automation engineer",
+      target_locations:"Dubai, Sharjah and Abu Dhabi (on-site or hybrid). Remote worldwide.",
+      experience_level:"Junior, 1 year", work_status:"Living in Dubai on a residence visa. No visa sponsorship needed.",
+      must_haves:"", deal_breakers:"Commission-only pay",
+      salary_floor_aed:5000, salary_preferred_min_aed:7000, salary_preferred_max_aed:12000, weekly_goal_min:15, weekly_goal_max:25, apify_monthly_budget_usd:5,
+      skills:"Languages: TypeScript, JavaScript, Python, SQL\nFrameworks: Next.js, React, Node.js, FastAPI\nData: PostgreSQL, Supabase\nTools: Git, Docker, n8n",
+      portfolio_projects:"Shift Planner: a scheduling app for small teams with WhatsApp reminders. Built all of it. Next.js, Supabase, n8n.\nInvoice Reader: reads PDF invoices into a spreadsheet with a review step. Python, FastAPI, PostgreSQL.",
+      resume_text:resume, cv_template:"navy",
+      role_lanes:[{lane:"Full-stack developer",fit:"strong",roles:"Junior or mid, Next.js or Node.js",keywords:["junior full stack developer","next.js developer","node.js developer"]},
+        {lane:"Frontend developer",fit:"good",roles:"React or Next.js",keywords:["react developer","frontend developer"]},
+        {lane:"Automation engineer",fit:"stretch",roles:"n8n, integrations",keywords:["automation engineer","n8n developer"]}],
+      role_skip:"Senior roles, sales, Java or .NET only, DevOps only",
+    },
+    brief: { date: day(0), markdown: "## Apply today\n- **Automation Engineer** at Dune Logic, 88/100. Matches your n8n and API work.\n- **Junior Full-Stack Developer** at Palm Grid Technologies, 82/100. Ready to send, closes in 2 days.\n## Send today\n- Recruiter note to Sara Ali at Palm Grid Technologies (email)\n- Connection note to Omar Khan at Sandline Systems (LinkedIn)\n## Follow up\n- **Integration Developer** at Saffron Pay: applied 15 days ago, no reply yet.\n## This week\n- 4 of 15 applications sent. Interview with Sandline Systems in 3 days." },
+  },
+  jobs: {
+    a1: { source:"linkedin", title:"Junior Full-Stack Developer", company:"Palm Grid Technologies", location:"Dubai, United Arab Emirates", salaryText:"AED 8,000 - 11,000 a month", score:82,
+          reasons:["Junior role on your exact stack: Next.js, TypeScript and PostgreSQL","Asks for 1+ years, which you have","Wants someone already in the UAE"], missing:["Kubernetes experience"], flags:[], deadline: day(2),
+          requirements:[{text:"1+ years building web apps",met:true,evidence:"Full-Stack Developer, Marina Labs"},{text:"Next.js and TypeScript",met:true,evidence:"Shift Planner project"},{text:"PostgreSQL or Supabase",met:true,evidence:"Skills: PostgreSQL, Supabase"},{text:"Experience with Kubernetes",met:false},{text:"Based in the UAE",met:true,evidence:"Living in Dubai, no sponsorship needed"}],
+          description:"We're hiring a junior full-stack developer to build features across our customer platform.\n\nWhat you'll do\n- Build and ship features in Next.js and TypeScript\n- Design tables and queries in PostgreSQL\n- Work with design and support to fix what customers report\n\nWhat we're looking for\n- 1+ years building web apps\n- Next.js, TypeScript and PostgreSQL or Supabase\n- Experience with Kubernetes is a plus\n- Based in the UAE", applyUrl:"https://example.com/jobs/junior-full-stack", createdAt: iso(-3),
+          app: app("ready",-2,{resume, coverLetter:cover, followUpDraft:"Hi, I applied for the Junior Full-Stack Developer role two weeks ago and wanted to check it reached the right person. Happy to share more on the booking system I built at Marina Labs.",
+            email:{to:"careers@example.com",subject:"Application: Junior Full-Stack Developer",body:"Dear Hiring Team,\n\nPlease find my CV and cover letter attached for the Junior Full-Stack Developer role.\n\nI've spent the last year building web apps with Next.js, TypeScript and PostgreSQL, and I live in Dubai.\n\nKind regards,\nAdam Kareem"}}) },
+    a2: { source:"indeed", title:"Automation Engineer (n8n)", company:"Dune Logic", location:"Sharjah", score:88, reasons:["Built around n8n, which is in two of your projects","Open to juniors"], createdAt: iso(-2), app: app("saved",-1) },
+    a3: { source:"web", title:"React Developer", company:"Mangrove Apps", location:"Dubai", score:76, createdAt: iso(-6), deadline: day(10), app: app("preparing",-1) },
+    a4: { source:"linkedin", title:"Integration Developer", company:"Saffron Pay", location:"Abu Dhabi", score:71, createdAt: iso(-20), app: app("applied",-16,{appliedAt:iso(-15), followUp:day(-1), history:hist(["applied",-15])}) },
+    a5: { source:"indeed", title:"Technical Trainer, Coding", company:"Oasis Learn", location:"Dubai", score:64, createdAt: iso(-9), app: app("applied",-6,{appliedAt:iso(-5), followUp:day(9), history:hist(["applied",-5])}) },
+    a12:{ source:"indeed", title:"Web Developer", company:"Corniche Digital", location:"Dubai", score:73, createdAt: iso(-12), app: app("applied",-10,{appliedAt:iso(-9), followUp:day(5), history:hist(["applied",-9])}) },
+    a13:{ source:"linkedin", title:"Junior Backend Developer (Node.js)", company:"Pearl Route", location:"Remote", remote:true, score:70, createdAt: iso(-5), app: app("applied",-4,{appliedAt:iso(-3), followUp:day(11), history:hist(["applied",-3])}) },
+    a6: { source:"web", title:"Frontend Engineer", company:"Khaleej Cloud", location:"Remote", remote:true, score:69, createdAt: iso(-30), app: app("screening",-24,{appliedAt:iso(-22), history:hist(["applied",-22],["screening",-12])}) },
+    a14:{ source:"linkedin", title:"Software Engineer, Internal Tools", company:"Falcon Freight Tech", location:"Dubai", score:75, createdAt: iso(-21), app: app("screening",-19,{appliedAt:iso(-18), history:hist(["applied",-18],["screening",-6])}) },
+    a7: { source:"linkedin", title:"Full-Stack Developer", company:"Sandline Systems", location:"Dubai", score:78, createdAt: iso(-40), app: app("interview",-36,{appliedAt:iso(-35), resume, coverLetter:cover, interviewAt: day(3)+"T10:00", interviewNote:"Video call with the head of engineering", history:hist(["applied",-35],["screening",-28],["interview",-8])}) },
+    a8: { source:"indeed", title:"Junior Python Developer", company:"Bluewadi Software", location:"Dubai", score:68, createdAt: iso(-55), app: app("offer",-52,{appliedAt:iso(-50), history:hist(["applied",-50],["screening",-44],["interview",-30],["offer",-4])}) },
+    a9: { source:"linkedin", title:"Support Engineer", company:"Souq Stack", location:"Dubai", score:55, createdAt: iso(-45), app: app("rejected",-41,{appliedAt:iso(-40), history:hist(["applied",-40],["screening",-33],["rejected",-25])}) },
+    a10:{ source:"indeed", title:"Web Developer", company:"Lantern Works", location:"Dubai", score:51, createdAt: iso(-42), app: app("rejected",-39,{appliedAt:iso(-38), history:hist(["applied",-38],["rejected",-20])}) },
+    j1: { source:"indeed", title:"Junior AI Automation Developer", company:"Date Palm Systems", location:"Dubai", score:81, reasons:["Automation focus with Python and n8n","Junior level"], createdAt: iso(-1) },
+    j2: { source:"linkedin", title:"Next.js Developer", company:"Pixel Majlis", location:"Dubai", score:79, reasons:["Next.js and Supabase, both in your projects"], createdAt: iso(-1) },
+    j5: { source:"linkedin", title:"Junior Software Developer", company:"Reef Signal", location:"Abu Dhabi", score:74, reasons:["Graduate-friendly, TypeScript"], createdAt: iso(-1) },
+    j6: { source:"web", title:"Frontend Developer (React)", company:"Minaret Studio", location:"Remote", remote:true, score:72, createdAt: iso(-2) },
+    j3: { source:"indeed", title:"Senior Java Architect", company:"Meridian Gulf Holdings", location:"Dubai", score:22, flags:["too_senior","off_target"], createdAt: iso(-1) },
+    j4: { source:"web", title:"Coding Instructor", company:"Little Loops Academy", location:"Sharjah", createdAt: iso(0) },
+  },
+  companies: {
+    c1: { name:"Palm Grid Technologies", source:"job a1", sector:"Software", emirate:"Dubai", contacts:[{id:"k1",name:"Sara Ali",role:"Talent Partner",kind:"recruiter",email:"sara@example.com"},{id:"k2",name:"Hassan Noor",role:"Engineering Manager",kind:"hiring_manager",linkedinUrl:"https://www.linkedin.com/in/example"}] },
+    c2: { name:"Sandline Systems", source:"job a7", sector:"Software", emirate:"Dubai", contacts:[{id:"k1",name:"Omar Khan",role:"Head of Engineering",kind:"hiring_manager",linkedinUrl:"https://www.linkedin.com/in/example"}] },
+    c3: { name:"Gulf Tech Recruiters", sector:"Recruitment", emirate:"Dubai", contacts:[{id:"k1",name:"Maya Thomas",role:"Technology Recruiter",kind:"agency",email:"maya@example.com"}] },
+  },
+  outreach: {
+    "o-1": { companyId:"c1", contactId:"k1", jobId:"a1", type:"job", channel:"email", subject:"Junior Full-Stack Developer application", draft:"Hi Sara,\n\nI've just applied for the Junior Full-Stack Developer role at Palm Grid. The listing asks for Next.js and PostgreSQL, and I built a booking system on that stack at Marina Labs that a team of 12 uses daily.\n\nI live in Dubai and need no visa sponsorship. Would you be able to pass my application to the hiring lead?\n\nThanks,\nAdam", followUpDraft:"Hi Sara, a quick follow-up on my application. I'm happy to share a short walkthrough of the booking system if that's useful.", status:"draft", createdAt: iso(-1) },
+    "o-2": { companyId:"c2", contactId:"k1", jobId:"a7", type:"job", channel:"linkedin", draft:"Hi Omar, thanks for connecting. I'm interviewing for the Full-Stack Developer role on your team and wanted to say hello before the call.", connectNote:"Hi Omar, I applied for the Full-Stack Developer role at Sandline and would like to connect.", status:"requested", requestedAt: iso(-2), followUpDate: day(5), createdAt: iso(-3) },
+    "o-3": { companyId:"c3", contactId:"k1", type:"recruiter", channel:"email", subject:"Junior full-stack developer in Dubai", draft:"Hi Maya, I'm a junior full-stack developer in Dubai looking for Next.js or Node.js roles.", status:"sent", sentAt: iso(-6), followUpDate: day(-1), createdAt: iso(-7) },
+    "o-4": { companyId:"c1", contactId:"k2", jobId:"a1", type:"job", channel:"linkedin", draft:"Hi Hassan, I applied for the junior role on your team.", status:"replied", sentAt: iso(-9), createdAt: iso(-10) },
+  },
+  runs: {
+    r1: { source:"indeed", query:"junior full stack developer Dubai", status:"succeeded", found:25, added:14, costUsd:0.004, createdAt: iso(-1) },
+    r2: { source:"linkedin", query:"next.js developer UAE", status:"succeeded", found:25, added:9, costUsd:0.011, createdAt: iso(-1) },
+    r3: { source:"web", query:"react developer remote", status:"succeeded", found:12, added:5, costUsd:0, createdAt: iso(-2) },
+  },
+};
+
+const listeners = {};
+function emit(name) { const snap = { metadata:{ fromCache:false }, docs:Object.entries(data[name]||{}).map(([id,d]) => ({ id, data:() => d })) }; (listeners[name]||[]).forEach(cb => cb(snap)); }
+// Like the real store: a deep merge, where null clears a field.
+const merge = (a, b) => { const out = { ...(a||{}) }; for (const [k,v] of Object.entries(b)) { if (v === null) delete out[k]; else out[k] = typeof v === "object" && !Array.isArray(v) ? merge(out[k], v) : v; } return out; };
+const fakeDb = {
+  collection(name) { return { onSnapshot(cb) { (listeners[name] ||= []).push(cb); setTimeout(() => emit(name)); return () => {}; } }; },
+  doc(path) { const [c, id] = path.split("/"); return { update: async p => { data[c][id] = merge(data[c][id], p); emit(c); }, set: async v => { data[c][id] = v; emit(c); } }; },
+};
+window.claude = { use: async name => name === "db" ? fakeDb : null };
+</script>
