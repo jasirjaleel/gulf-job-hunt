@@ -11,7 +11,7 @@ Dashboard: see `CLAUDE.md` for its URL and how the local copy works.
    - **Level (strongest factor):** junior and entry-level roles score high. Roles asking for 4+ years score low and get the `too_senior` flag.
    - **Skills:** how much of the required stack appears in the profile's skills and resume. Never assume a skill that isn't there.
    - **UAE experience:** if the listing requires it, lower the score and add `requires_uae_experience`. If it's open to UAE nationals only (Emiratisation roles), score it 10 or lower and add `uae_nationals_only`.
-   - **Local availability:** the user is already in the UAE and needs no visa sponsorship. Raise the score for UAE roles, especially ones wanting immediate joiners or candidates with their own visa.
+   - **Local availability:** read the profile's `work_status`. If it says the user is already in the country and needs no visa sponsorship, raise the score for roles there, especially ones wanting immediate joiners or candidates with their own visa. If it says the user needs sponsorship, lower the score for listings that say they don't sponsor. If it's empty, treat this as neutral.
    - **Salary:** compare with the profile's preferred range. Lower the score slightly and add `below_salary_target` only if listed pay is clearly under the lowest salary in the profile, or under AED 5,000 when that is 0. A missing salary is neutral.
    - **Deal-breakers:** any match scores 20 or lower.
    - **Off target:** if the role isn't in any of the profile's `role_lanes` and is listed in `role_skip` (for example sales, Java/.NET-only, DevOps-only or data science), score it 30 or lower and add `off_target`.

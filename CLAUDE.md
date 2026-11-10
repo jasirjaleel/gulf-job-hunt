@@ -1,4 +1,4 @@
-# Job Hunt Platform
+# Gulf Job Hunt
 
 Claude Code commands for a UAE and remote job search. Claude Code scrapes through the Apify MCP server (or the web once the free credit is used up), scores jobs, and drafts documents and outreach to hiring managers, recruiters, people the user knows and companies that aren't hiring yet. Everything is stored in the **Job Hunt dashboard on claude.ai**, which the user opens in their browser.
 
@@ -22,6 +22,7 @@ The dashboard's database has these collections, read and written with the Artifa
 - The page shows changes live. The user edits there too, so always refresh before writing.
 
 ## Commands
+- `/setup`: first-time setup. Publishes the user's own private dashboard, saves its link in `CLAUDE.local.md` and builds the profile from their CV
 - `/find-jobs <role> <location>`: scrape and add listings through Apify (or the free web fallback)
 - `/browse-jobs [role] [location] [site]`: search Indeed, NaukriGulf and LinkedIn in the user's own Chrome, read-only, and add listings
 - `/score-jobs`: score unscored jobs by chance of getting hired
