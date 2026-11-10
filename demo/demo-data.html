@@ -2,7 +2,8 @@
 <script>
 // Demo stand-in for the claude.ai runtime, so the dashboard can run in any browser without an account.
 // Everything below is made up: the person, the companies, the contacts and the jobs. Nothing is saved;
-// changes last until the page is reloaded. `npm run demo` joins this file with dashboard/job-hunt.html.
+// changes last until the page is reloaded. `npm run demo` joins this file with dashboard/job-hunt.html
+// and writes docs/demo/index.html, which the website links to.
 const now = new Date(), iso = d => new Date(now.getTime()+d*864e5).toISOString(), day = d => iso(d).slice(0,10);
 const hist = (...steps) => Object.fromEntries(steps.map(([s,d],i)=>["t"+(1000+i),{s,at:iso(d)}]));
 const app = (status, created, extra={}) => ({status, createdAt:iso(created), ...extra});
@@ -137,5 +138,20 @@ const fakeDb = {
   collection(name) { return { onSnapshot(cb) { (listeners[name] ||= []).push(cb); setTimeout(() => emit(name)); return () => {}; } }; },
   doc(path) { const [c, id] = path.split("/"); return { update: async p => { data[c][id] = merge(data[c][id], p); emit(c); }, set: async v => { data[c][id] = v; emit(c); } }; },
 };
-window.claude = { use: async name => name === "db" ? fakeDb : null };
+// Downloads go straight to the browser here; on claude.ai the viewer is asked first.
+const fakeDownloads = { save: async ({ filename, data }) => {
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(data instanceof Blob ? data : new Blob([data])), download: filename });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); return { status: "saved" }; } };
+window.claude = { use: async name => name === "db" ? fakeDb : name === "downloads" ? fakeDownloads : null };
+
+// A small label so nobody mistakes the demo for real data.
+addEventListener("DOMContentLoaded", () => {
+  const bar = document.createElement("div");
+  bar.setAttribute("role", "note");
+  bar.style.cssText = "position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;gap:10px;align-items:center;padding:7px 14px;border-radius:999px;background:#181818;border:1px solid rgba(255,255,255,.22);color:#f4f4f2;font:13px/1.3 Geist,system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.6);white-space:nowrap";
+  const back = Object.assign(document.createElement("a"), { href: "../index.html", textContent: "About Gulf Job Hunt" });
+  back.style.cssText = "color:#f4f4f2";
+  bar.append("Demo with made-up data. Nothing is saved.", back);
+  document.body.append(bar);
+});
 </script>

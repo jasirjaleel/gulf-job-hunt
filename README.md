@@ -2,6 +2,8 @@
 
 A job search you run from Claude Code, built for the UAE and remote roles.
 
+**Website and live demo:** https://jasirjaleel.github.io/gulf-job-hunt/
+
 Claude finds jobs, scores each one against your profile, writes a tailored resume and cover letter, finds who to contact and drafts the message. Everything lands on your own private dashboard on claude.ai, with a board, a funnel and a calendar. You read everything and send it yourself.
 
 There's no server to run and no AI key to buy. It works on your Claude plan.
@@ -33,7 +35,7 @@ The screenshots on this page show made-up demo data.
 
 ![The job posting next to a checklist of five requirements, four covered by the profile](docs/images/match.png)
 
-To try the dashboard with the demo data, run `npm run demo` and open `demo/index.html` in your browser. Nothing in the demo is saved.
+To try the dashboard with the demo data, open the [live demo](https://jasirjaleel.github.io/gulf-job-hunt/demo/), or run `npm run demo` and open `docs/demo/index.html` in your browser. Nothing in the demo is saved.
 
 ## The rules it follows
 

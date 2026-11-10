@@ -1,5 +1,5 @@
 /node_modules
-/demo/index.html
+/docs/demo/
 .DS_Store
 *.tsbuildinfo
 

@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gulf Job Hunt · A job search run from Claude Code</title>
+<meta name="description" content="Claude finds jobs in the UAE and remote, scores them against your profile, and drafts every resume, cover letter and message. You read them and send them yourself. Free and open source.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="Gulf Job Hunt">
+<meta property="og:description" content="A job search run from Claude Code, built for the UAE and remote roles. Claude drafts. You send.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jasirjaleel.github.io/gulf-job-hunt/">
+<meta property="og:image" content="https://jasirjaleel.github.io/gulf-job-hunt/images/dashboard.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f4f4f2'/%3E%3Cpath d='M9 22V10m0 12h14M14 22v-6m5 6V12' stroke='%23000' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+/* Same single dark look as the dashboard: black page, thin lines, serif headings, and one colour per application stage. */
+:root {
+  color-scheme: dark;
+  --page: #000; --card: #101010; --inset: #181818; --hover: #1f1f1f;
+  --fg: #f4f4f2; --muted: #9a9a94; --line: rgba(255,255,255,.1); --line-strong: rgba(255,255,255,.22);
+  --applied: #3987e5; --screening: #199e70; --interview: #9085e9; --offer: #c98500;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--page); color: var(--fg); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+img { display: block; max-width: 100%; height: auto; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
+.wrap { width: 100%; max-width: 1136px; margin: 0 auto; padding: 0 24px; }
+.skip { position: absolute; left: -999px; top: 8px; background: #fff; color: #000; padding: 8px 12px; border-radius: 8px; z-index: 30; }
+.skip:focus { left: 8px; }
+
+/* Top bar */
+header { position: sticky; top: 0; z-index: 20; background: rgba(0,0,0,.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.mark { width: 26px; height: 26px; flex: none; }
+nav { display: flex; align-items: center; gap: 4px; }
+nav a { text-decoration: none; color: var(--muted); font-size: 14px; padding: 8px 12px; border-radius: 999px; }
+nav a:hover { color: var(--fg); }
+nav a.pill { color: var(--fg); border: 1px solid var(--line-strong); margin-left: 6px; }
+nav a.pill:hover { background: var(--hover); }
+@media (max-width: 720px) { nav a:not(.pill) { display: none; } }
+
+/* Shared type */
+h1, h2 { font-family: var(--serif); font-weight: 400; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(30px, 4.2vw, 44px); line-height: 1.12; }
+h3 { font-size: 17px; font-weight: 500; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 18px; max-width: 58ch; text-wrap: pretty; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+code, kbd { font-family: var(--mono); font-size: .86em; }
+kbd { background: var(--inset); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; white-space: nowrap; color: var(--fg); }
+section { padding: 96px 0; border-top: 1px solid var(--line); }
+@media (max-width: 720px) { section { padding: 64px 0; } }
+.head { display: grid; gap: 14px; margin-bottom: 44px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--inset); color: var(--fg); font: 500 15px var(--sans); text-decoration: none; white-space: nowrap; }
+.btn:hover { background: var(--hover); }
+.btn.primary { background: #fff; color: #000; border-color: #fff; }
+.btn.primary:hover { background: #e4e4e0; }
+
+/* Hero */
+.hero { border-top: 0; padding: 84px 0 72px; }
+.hero h1 { font-size: clamp(42px, 7.2vw, 84px); line-height: 1.02; max-width: 15ch; margin: 18px 0 22px; }
+.hero h1 em { font-style: italic; color: var(--muted); }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 16px; }
+.fine { color: var(--muted); font-size: 14px; }
+/* The four stages an application moves through, as a thin strip under the hero text. */
+.stages { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 34px; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+.stages li { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 3px; flex: none; background: var(--c); }
+.shot { margin: 56px 0 0; border: 1px solid var(--line-strong); border-radius: 18px; overflow: hidden; background: var(--card); box-shadow: 0 40px 120px -30px rgba(57,135,229,.28), 0 0 0 1px rgba(0,0,0,.6); }
+.shot + .fine { margin-top: 14px; }
+@media (max-width: 720px) { .hero { padding: 48px 0 56px; } .shot { border-radius: 12px; margin-top: 40px; } }
+
+/* How it works */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+.step { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: grid; gap: 12px; align-content: start; }
+.step .n { font: 500 13px var(--mono); color: var(--c); display: flex; align-items: center; gap: 8px; }
+.step p { color: var(--muted); font-size: 15px; }
+.cmds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+@media (max-width: 980px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+
+/* A look around */
+.tour { display: grid; gap: 72px; }
+.row { display: grid; grid-template-columns: 4fr 7fr; gap: 48px; align-items: center; }
+.row:nth-child(even) { grid-template-columns: 7fr 4fr; }
+.row:nth-child(even) .text { order: 2; }
+.row .text { display: grid; gap: 12px; }
+.row .text h3 { font: 400 28px/1.15 var(--serif); letter-spacing: -.01em; }
+.row .text p { color: var(--muted); }
+.row figure { margin: 0; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--card); }
+@media (max-width: 860px) { .row, .row:nth-child(even) { grid-template-columns: 1fr; gap: 20px; } .row:nth-child(even) .text { order: 0; } .tour { gap: 56px; } }
+
+/* The rules */
+.split { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: start; }
+.split > .head { position: sticky; top: 96px; margin-bottom: 0; }
+.rules { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.rules li { display: grid; gap: 4px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.rules p { color: var(--muted); }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; gap: 32px; } .split > .head { position: static; } }
+
+/* What you need */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 26px; display: grid; gap: 14px; align-content: start; }
+.card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--muted); font-size: 15px; }
+.card li { padding-left: 18px; position: relative; }
+.card li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 2px; background: var(--line-strong); }
+.card strong { color: var(--fg); font-weight: 500; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+
+/* Setup */
+.term { background: var(--card); border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; min-width: 0; }
+.term .top { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.term .top i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+.term pre { margin: 0; padding: 20px; overflow-x: auto; font: 14px/1.9 var(--mono); }
+.term .c { color: var(--muted); }
+.after { display: grid; gap: 16px; }
+.after p { color: var(--muted); }
+
+footer { border-top: 1px solid var(--line); padding: 36px 0 56px; color: var(--muted); font-size: 14px; }
+.foot { display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between; }
+.foot a:hover { color: var(--fg); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="Gulf Job Hunt, back to the top">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#f4f4f2"/><path d="M9 22V10m0 12h14M14 22v-6m5 6V12" stroke="#000" stroke-width="2.6" stroke-linecap="round"/></svg>
+      Gulf Job Hunt
+    </a>
+    <nav aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#look">A look around</a>
+      <a href="#rules">The rules</a>
+      <a href="#setup">Setup</a>
+      <a class="pill" href="https://github.com/jasirjaleel/gulf-job-hunt">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top">
+    <div class="wrap">
+      <p class="eyebrow">Open source · For Claude Code</p>
+      <h1>Your Gulf job search, <em>run from Claude Code.</em></h1>
+      <p class="lede">Claude finds the jobs, scores each one against your profile, and drafts the resume, the cover letter and the message. You read them and send them yourself.</p>
+      <div class="cta">
+        <a class="btn primary" href="demo/index.html">Try the live demo</a>
+        <a class="btn" href="https://github.com/jasirjaleel/gulf-job-hunt">View on GitHub</a>
+      </div>
+      <p class="fine">Free under the MIT licence. Built for the UAE and remote roles. No server to run.</p>
+      <ul class="stages" aria-label="The stages each application is tracked through">
+        <li><span class="dot" style="--c:var(--applied)"></span>Applied</li>
+        <li><span class="dot" style="--c:var(--screening)"></span>Screening</li>
+        <li><span class="dot" style="--c:var(--interview)"></span>Interview</li>
+        <li><span class="dot" style="--c:var(--offer)"></span>Offer</li>
+      </ul>
+      <figure class="shot">
+        <img src="images/dashboard.png" width="1600" height="1044" alt="The dashboard. A funnel shows 10 applications sent, 5 in screening, 2 interviews and 1 offer, above a week-by-week chart.">
+      </figure>
+      <p class="fine">Every screenshot here shows made-up demo data.</p>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">How it works</p>
+        <h2>Four steps from “I'm looking” to “I applied”.</h2>
+        <p class="lede">You type short commands in Claude Code. The results land on a private dashboard in your browser.</p>
+      </div>
+      <ol class="steps">
+        <li class="step" style="--c:var(--applied)">
+          <span class="n"><span class="dot"></span>01</span>
+          <h3>Set it up once</h3>
+          <p>Publishes your own private dashboard and builds your profile from your CV and a few questions.</p>
+          <div class="cmds"><kbd>/setup</kbd></div>
+        </li>
+        <li class="step" style="--c:var(--screening)">
+          <span class="n"><span class="dot"></span>02</span>
+          <h3>Find and score jobs</h3>
+          <p>Searches Indeed, LinkedIn and NaukriGulf. Each job gets a score from 0 to 100 for your real chance of getting hired, with reasons.</p>
+          <div class="cmds"><kbd>/find-jobs</kbd><kbd>/score-jobs</kbd></div>
+        </li>
+        <li class="step" style="--c:var(--interview)">
+          <span class="n"><span class="dot"></span>03</span>
+          <h3>Tailor each application</h3>
+          <p>A resume and cover letter written for that one job, in any of twelve PDF designs, from the facts in your profile.</p>
+          <div class="cmds"><kbd>/prepare-application</kbd></div>
+        </li>
+        <li class="step" style="--c:var(--offer)">
+          <span class="n"><span class="dot"></span>04</span>
+          <h3>Reach a person, then track it</h3>
+          <p>Finds the hiring manager or recruiter and drafts a personal message. The board follows each application to an offer.</p>
+          <div class="cmds"><kbd>/find-hiring-contact</kbd><kbd>/draft-outreach</kbd></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="look">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">A look around</p>
+        <h2>One place for the whole search.</h2>
+      </div>
+      <div class="tour">
+        <div class="row">
+          <div class="text">
+            <h3>A board that shows what needs you</h3>
+            <p>Every application sits in its stage. Apply-by dates, interview times and overdue follow-ups show on the card, so nothing goes quiet without you noticing.</p>
+          </div>
+          <figure><img loading="lazy" src="images/board.png" width="1600" height="1044" alt="The applications board with columns for To apply, Applied, Screening, Interview and Offer. Cards show the company, role, match score and any date that is due."></figure>
+        </div>
+        <div class="row">
+          <div class="text">
+            <h3>The resume as the page you'll send</h3>
+            <p>Each application has its tailored resume shown as the real PDF page, with the cover letter, the email, the job posting, your messages and your notes in tabs beside it.</p>
+          </div>
+          <figure><img loading="lazy" src="images/application.png" width="1600" height="1044" alt="An application page. The tailored resume appears as a PDF page, with tabs for the cover letter, email, job posting, messages and notes."></figure>
+        </div>
+        <div class="row">
+          <div class="text">
+            <h3>An honest match, line by line</h3>
+            <p>Each requirement in the listing is checked against your profile, with where the proof comes from. What you don't have is shown as a gap, and it stays a gap.</p>
+          </div>
+          <figure><img loading="lazy" src="images/match.png" width="1600" height="1044" alt="A job posting next to a checklist of five requirements. Four are covered by the profile, each with its source. Kubernetes experience is marked as not in the profile yet."></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rules">
+    <div class="wrap split">
+      <div class="head">
+        <p class="eyebrow">The rules</p>
+        <h2>Claude drafts. You decide.</h2>
+        <p class="lede">These are written into the project, so every command follows them.</p>
+      </div>
+      <ul class="rules">
+        <li><h3>It never invents experience</h3><p>Documents and messages use only what's in your profile. No made-up skills, employers, dates or results.</p></li>
+        <li><h3>It never sends or applies</h3><p>Nothing leaves your computer by itself. You press send on every application and every message.</p></li>
+        <li><h3>It never automates LinkedIn</h3><p>No connecting, messaging or applying for you, and no tool that asks for your LinkedIn login.</p></li>
+        <li><h3>Public business contacts only</h3><p>Company pages and work profiles. No personal emails and no guessed addresses.</p></li>
+        <li><h3>Your data stays yours</h3><p>It lives in your private claude.ai page and in a local folder that git ignores. One button downloads all of it.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="need">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Before you start</p>
+        <h2>What you need, and what it costs.</h2>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <h3>You need</h3>
+          <ul>
+            <li><strong>Claude Code</strong>, signed in with a claude.ai account. The dashboard is a private page there.</li>
+            <li><strong>Node.js</strong> 22.18 or newer.</li>
+            <li>Optional: the Claude in Chrome extension, to read job sites in your own browser.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>It costs</h3>
+          <ul>
+            <li><strong>Nothing extra</strong> to run. There's no server and no AI key to buy. It works on your Claude plan.</li>
+            <li>Optional: an Apify account makes searches faster. A search of 25 LinkedIn results is about 1 cent, and Apify has a free monthly credit.</li>
+            <li>You set a monthly budget. Near the limit, searches switch to free web search.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Good to know</h3>
+          <ul>
+            <li><strong>Made for the UAE first.</strong> Salaries are in AED, and scoring knows about UAE experience and nationals-only roles.</li>
+            <li>It's a Claude Code project, so you use it by typing commands. It isn't an app you install.</li>
+            <li>The interface is in English.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="setup">
+    <div class="wrap split">
+      <div class="after">
+        <p class="eyebrow">Setup</p>
+        <h2>Running in a few minutes.</h2>
+        <p>Get the code, start Claude Code in the folder and run <kbd>/setup</kbd>. It asks for your CV and a few things a CV can't answer, such as the roles you want and your work status.</p>
+        <p>Not ready to set it up? The demo runs in your browser with made-up data, and nothing in it is saved.</p>
+        <div class="cta" style="margin:8px 0 0">
+          <a class="btn primary" href="demo/index.html">Try the live demo</a>
+          <a class="btn" href="https://github.com/jasirjaleel/gulf-job-hunt#readme">Read the guide</a>
+        </div>
+      </div>
+      <div class="term" role="group" aria-label="Setup commands">
+        <div class="top" aria-hidden="true"><i></i><i></i><i></i></div>
+<pre><code>git clone https://github.com/jasirjaleel/gulf-job-hunt.git
+cd gulf-job-hunt
+npm install
+claude
+
+<span class="c"># then, inside Claude Code</span>
+/setup</code></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>Gulf Job Hunt is free software under the <a href="https://github.com/jasirjaleel/gulf-job-hunt/blob/main/LICENSE">MIT licence</a>. Made by <a href="https://github.com/jasirjaleel">Jasir Jaleel</a>.</span>
+    <span>The board and funnel were inspired by <a href="https://github.com/AienTech/dossier">Dossier</a>. No Dossier code is used.</span>
+  </div>
+</footer>
+</body>
+</html>
