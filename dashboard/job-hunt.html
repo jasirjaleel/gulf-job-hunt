@@ -1,0 +1,1555 @@
+<title>Job Hunt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* Layout: one framed app with a sidebar, a top bar and the page; the sidebar becomes a slim top strip on phones. Single dark look. */
+:root {
+  color-scheme: dark;
+  --page: #000;
+  --frame: #070707;
+  --card: #101010;
+  --inset: #181818;
+  --hover: #1f1f1f;
+  --fg: #f4f4f2;
+  --muted: #8f8f8a;
+  --line: rgba(255,255,255,.08);
+  --line-strong: rgba(255,255,255,.22);
+  --accent: #fff;
+  --accent-fg: #000;
+  --good: #a9d9c1; --good-bg: rgba(169,217,193,.12);
+  --warn: #e8cf94; --warn-bg: rgba(232,207,148,.12);
+  --bad: #ec9f95; --bad-bg: rgba(236,159,149,.12);
+  --info: #c3bdf5; --info-bg: rgba(160,150,240,.14);
+  --tint-1: rgba(239,175,72,.15); --tint-1-fg: #f3d9a6;
+  --tint-2: rgba(93,202,165,.14); --tint-2-fg: #b8ecd8;
+  --tint-3: rgba(140,130,235,.18); --tint-3-fg: #d2cdf8;
+  --tint-4: rgba(232,120,96,.15); --tint-4-fg: #f6c8b8;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  /* One colour per stage, used by the funnel, the charts and the board. Checked for colour-blind separation on the dark card. */
+  --st-todo: #8a8a85; --st-applied: #3987e5; --st-screening: #199e70; --st-interview: #9085e9; --st-offer: #c98500; --st-closed: #d03b3b;
+}
+* { box-sizing: border-box; scrollbar-color: rgba(255,255,255,.18) transparent; scrollbar-width: thin; }
+html, body { min-height: 100%; margin: 0; }
+body { background: var(--page); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 20; background: var(--page); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select option { background: #111; color: var(--fg); }
+h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+
+.shell { display: flex; flex-direction: column; min-height: 100vh; background: var(--frame); }
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; gap: 4px; overflow-x: auto; background: var(--frame);
+  border-bottom: 1px solid var(--line); padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 12px; white-space: nowrap; font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
+.mark { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: var(--fg); color: var(--accent-fg); font-size: 14px; font-weight: 600; }
+.side-label, .side-div, .side-foot { display: none; }
+.nav { position: relative; display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--muted); font: inherit; border-radius: 10px; padding: 7px 12px; white-space: nowrap; cursor: pointer; transition: color .15s, background .15s; }
+.nav:hover { color: var(--fg); background: var(--inset); }
+.nav[aria-current="page"] { background: var(--inset); color: var(--fg); }
+.count { margin-left: auto; min-width: 22px; border-radius: 999px; background: var(--hover); color: var(--fg); padding: 0 7px; font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+.count + .count { margin-left: 4px; }
+.count.dim { background: transparent; box-shadow: inset 0 0 0 1px var(--hover); }
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--line); }
+.top h1 { font-family: var(--serif); font-size: 24px; font-weight: 400; letter-spacing: -.01em; line-height: 1.2; margin-right: auto; }
+.search { position: relative; order: 3; flex: 1 1 100%; }
+.search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input { width: 100%; border: 1px solid var(--line); border-radius: 999px; background: var(--inset); color: var(--fg); font: inherit; padding: 9px 16px 9px 40px; }
+.search input::placeholder { color: var(--muted); }
+.iconbtn { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--fg); cursor: pointer; }
+.iconbtn:hover { background: var(--inset); }
+.iconbtn .pip { position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
+main { flex: 1; min-width: 0; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 768px) {
+  body { padding: 16px; }
+  .shell { flex-direction: row; min-height: calc(100vh - 32px); border: 1px solid var(--line); border-radius: 22px; overflow: clip; }
+  .rail { top: 16px; height: calc(100vh - 34px); width: 244px; flex: none; flex-direction: column; align-items: stretch; gap: 2px; border-bottom: 0; border-right: 1px solid var(--line); padding: 22px 16px 16px; overflow-y: auto; }
+  .brand { margin: 0 8px 20px; }
+  .newapp { margin: 0 0 14px; justify-content: flex-start; padding: 9px 14px; }
+  .side-label { display: block; margin: 14px 12px 6px; color: var(--muted); font-size: 12px; }
+  .side-div { display: block; height: 1px; background: var(--line); margin: 14px 12px; }
+  .side-foot { display: flex; align-items: center; gap: 10px; margin-top: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--inset); padding: 12px; }
+  .nav { width: 100%; text-align: left; padding: 9px 12px; }
+  .top { flex-wrap: nowrap; padding: 18px 32px; gap: 20px; }
+  .top h1 { margin-right: 0; flex: none; min-width: 150px; font-size: 28px; }
+  .search { order: 0; flex: 1 1 auto; max-width: 620px; margin: 0 auto; }
+  main { padding: 28px 32px 40px; }
+}
+.avatar { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; font-weight: 500; font-size: 13px; }
+.avatar.round { border-radius: 50%; background: var(--fg); color: var(--accent-fg); }
+.t1 { background: var(--tint-1); color: var(--tint-1-fg); } .t2 { background: var(--tint-2); color: var(--tint-2-fg); }
+.t3 { background: var(--tint-3); color: var(--tint-3-fg); } .t4 { background: var(--tint-4); color: var(--tint-4-fg); }
+
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.stack-lg { display: flex; flex-direction: column; gap: 28px; }
+.stack-sm { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.between { justify-content: space-between; }
+.narrow { max-width: 860px; } .wide { max-width: 1280px; }
+.title { font-family: var(--serif); font-size: 30px; font-weight: 400; letter-spacing: -.015em; line-height: 1.2; text-wrap: balance; }
+.h2 { font-size: 15px; font-weight: 500; }
+.sec, .serif { font-family: var(--serif); font-size: 21px; font-weight: 400; letter-spacing: -.01em; line-height: 1.25; }
+.muted { color: var(--muted); } .small { font-size: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; min-width: 0; }
+.flush { padding: 0; overflow-x: auto; }
+.pad { padding: 16px; }
+.cols { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 1000px) { .cols { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .cols.detail { grid-template-columns: minmax(0,1fr) minmax(0,26rem); } }
+.sticky { position: sticky; top: 24px; }
+@media (max-width: 999px) { .sticky { position: static; } }
+
+.matches { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 600px) { .matches { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1200px) { .matches { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+.mcard { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); padding: 8px; }
+.mtop { display: flex; justify-content: space-between; gap: 10px; min-height: 140px; border-radius: 13px; padding: 16px; text-align: left; border: 0; font: inherit; cursor: pointer; }
+.mtop:hover { filter: brightness(1.15); }
+.mtop .co { display: block; font-size: 13px; opacity: .8; }
+.mtop .ti { display: block; margin-top: 2px; font-weight: 500; font-size: 15px; line-height: 1.35; color: var(--fg); }
+.mfoot { display: flex; align-items: center; gap: 8px; padding: 2px 6px 6px; min-width: 0; }
+.mfoot .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.ring { flex: none; }
+.ring text { font: 500 11px var(--sans); fill: currentColor; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--fg); font: inherit; padding: 5px 14px; cursor: pointer; }
+.pill:hover { border-color: var(--line-strong); }
+.pill[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--accent-fg); }
+.pill .n { margin-left: 6px; opacity: .6; font-variant-numeric: tabular-nums; }
+.status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.s-good { background: var(--good-bg); color: var(--good); } .s-warn { background: var(--warn-bg); color: var(--warn); }
+.s-bad { background: var(--bad-bg); color: var(--bad); } .s-info { background: var(--info-bg); color: var(--info); }
+.s-plain { background: var(--inset); color: var(--muted); }
+.apps th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.apps tbody tr { cursor: pointer; }
+.apps tbody tr:hover td { background: var(--inset); }
+.pos { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.ok { color: var(--good); }
+.bar { display: block; height: 6px; border-radius: 999px; background: var(--inset); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--fg); }
+.steps { counter-reset: step; }
+.step { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 14px; padding: 16px 0; }
+.step + .step { border-top: 1px solid var(--line); }
+.step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--inset); font-weight: 500; }
+.chip { border: 1px solid var(--line); border-radius: 999px; background: var(--inset); color: var(--fg); font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer; }
+.chip:hover { border-color: var(--line-strong); }
+a.chip { display: inline-block; text-decoration: none; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--inset); color: var(--fg); font: inherit; padding: 6px 14px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s; }
+.btn:hover { background: var(--hover); border-color: var(--line-strong); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.primary, .primary:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 500; }
+.primary:hover { opacity: .86; }
+.link { border: 0; background: none; color: inherit; font: inherit; padding: 0; text-align: left; cursor: pointer; }
+.link:hover { text-decoration: underline; }
+.field { width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--inset); color: var(--fg); font: inherit; padding: 8px 12px; transition: border-color .15s; }
+.field:hover { border-color: var(--line-strong); }
+.field::placeholder { color: var(--muted); }
+textarea.field { display: block; resize: vertical; }
+.code { font-family: var(--mono); font-size: 12px; }
+.label { display: block; margin-bottom: 6px; color: var(--muted); }
+.grid3 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.filters .field { width: auto; flex: 1 1 140px; min-width: 0; }
+.badge { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; white-space: nowrap; }
+.b-good { background: var(--good-bg); color: var(--good); } .b-warn { background: var(--warn-bg); color: var(--warn); }
+.b-bad { background: var(--bad-bg); color: var(--bad); } .b-plain { border: 1px solid var(--line); color: var(--muted); }
+kbd { font-family: var(--mono); font-size: .86em; border-radius: 6px; background: var(--inset); padding: 2px 6px; white-space: nowrap; }
+.prose { white-space: pre-wrap; overflow-wrap: anywhere; }
+.scroll { max-height: 26rem; overflow-y: auto; } .scroll-lg { max-height: 42rem; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th { font-weight: 400; color: var(--muted); border-bottom: 1px solid var(--line); }
+th, td { padding: 12px 16px; vertical-align: middle; }
+tbody tr + tr td { border-top: 1px solid var(--line); }
+tr.sel { background: var(--inset); }
+.r { text-align: right; font-variant-numeric: tabular-nums; }
+.bullets { list-style: disc; padding-left: 18px; }
+.divide > * + * { border-top: 1px solid var(--line); }
+.cvgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 720px) { .cvgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .cvgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cvcard { display: flex; flex-direction: column; gap: 6px; min-width: 0; text-align: left; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--fg); font: inherit; padding: 10px; cursor: pointer; transition: border-color .15s; }
+.cvcard:hover { border-color: var(--line-strong); }
+.cvcard[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 1px var(--fg); }
+.cvpaper { display: block; aspect-ratio: 210 / 297; overflow: hidden; border-radius: 6px; background: #fff; }
+.cvpaper img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.cvpaper img:not([src]) { visibility: hidden; }
+.cvpages { display: grid; justify-items: center; gap: 16px; }
+.cvpage { display: block; width: 100%; max-width: 640px; border-radius: 6px; background: #fff; }
+.hl { border-radius: 4px; padding: 0 3px; }
+.hl-verb { background: var(--tint-4); color: var(--tint-4-fg); } .hl-tool { background: var(--tint-1); color: var(--tint-1-fg); } .hl-num { background: var(--tint-2); color: var(--tint-2-fg); }
+.match { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; width: 100%; }
+.board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: stretch; min-height: 420px; }
+.col { flex: 1 0 196px; max-width: 340px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 10px; transition: border-color .15s; }
+.col.over { border-color: var(--accent); }
+.col h2 { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; font-size: 13px; font-weight: 500; }
+.col h2 .n { margin-left: auto; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.tile { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; cursor: grab; margin-top: 8px; background: var(--inset); }
+.tile:first-of-type { margin-top: 0; }
+.tile .tname { font-weight: 500; line-height: 1.35; }
+.tfoot { flex-wrap: nowrap; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px; }
+.more { appearance: none; -webkit-appearance: none; flex: none; width: 28px; height: 22px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 17px; line-height: 1; text-align: center; text-align-last: center; padding: 0; cursor: pointer; }
+.more:hover { background: var(--hover); color: var(--fg); }
+.dot, .key i { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 2px; }
+.hero { display: flex; gap: 28px; }
+.hero b { display: block; font: 400 28px/1.1 var(--serif); }
+.hero span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.scrollx { overflow-x: auto; }
+.fn { display: block; width: 100%; min-width: 820px; height: auto; }
+.fn text { font-family: var(--sans); font-size: 12px; fill: var(--fg); }
+.fn .lab { font-size: 13px; font-weight: 500; }
+.fn .num { font-family: var(--serif); font-size: 26px; }
+.fn .sub { font-size: 11.5px; fill: var(--muted); }
+.wk { display: block; width: 100%; min-width: 560px; height: auto; }
+.wk text { font-family: var(--sans); font-size: 11px; fill: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 12px; }
+.key { display: inline-flex; align-items: center; gap: 6px; }
+.nums summary { color: var(--muted); font-size: 12px; cursor: pointer; }
+.segbar { display: flex; gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; }
+.segbar i { display: block; min-width: 4px; }
+.stand { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 28px; }
+.stand li { display: flex; align-items: center; gap: 8px; }
+.stand li span:last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
+.tabs { display: flex; gap: 24px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.tab { border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; padding: 10px 0; white-space: nowrap; cursor: pointer; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { border-color: var(--fg); color: var(--fg); }
+.desk { border-radius: 16px; background: var(--inset); padding: 16px; }
+@media (min-width: 768px) { .desk { padding: 28px; } }
+.paper { width: 100%; max-width: 640px; border-radius: 6px; background: #fff; color: #111; padding: 32px; }
+.fit li { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 12px; padding: 10px 0; }
+.tick, .gap { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 1; }
+.tick { background: var(--fg); color: var(--accent-fg); }
+.gap { border: 1px solid var(--line-strong); color: var(--muted); }
+.b-info { background: var(--info-bg); color: var(--info); }
+.mstep { padding: 2px 11px; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 2px; text-align: center; }
+.calhead { color: var(--muted); font-size: 11px; padding: 4px 0; }
+.calday { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 42px; border: 1px solid transparent; border-radius: 10px; background: none; color: var(--fg); font: inherit; font-variant-numeric: tabular-nums; padding: 6px 0 4px; cursor: pointer; }
+.calday:disabled { color: var(--muted); cursor: default; }
+.calday:not(:disabled):hover, .calday.on { border-color: var(--line-strong); background: var(--inset); }
+.calday.today > span:first-child { display: grid; place-items: center; width: 24px; height: 24px; margin: -2px 0; border-radius: 50%; background: var(--fg); color: var(--accent-fg); font-weight: 500; }
+.caldots { display: flex; gap: 3px; height: 5px; }
+.caldots i { width: 5px; height: 5px; border-radius: 50%; }
+.pnav { display: flex; flex-wrap: wrap; gap: 4px; }
+@media (min-width: 1000px) { .cols.prof { grid-template-columns: 250px minmax(0,1fr); } .pnav { flex-direction: column; flex-wrap: nowrap; } }
+.olist { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.ocard { display: flex; flex-direction: column; gap: 10px; min-width: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: inherit; font: inherit; text-align: left; padding: 16px; cursor: pointer; transition: border-color .15s, background .15s; }
+.ocard:hover { border-color: var(--line-strong); background: var(--inset); }
+.clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.sep { border-top: 1px solid var(--line); padding-top: 12px; }
+#toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 14px; border-radius: 999px; padding: 8px 16px; background: #1b1b1b; border: 1px solid var(--line-strong); }
+#toast[hidden] { display: none; }
+</style>
+
+<div class="shell">
+  <nav class="rail" id="nav" aria-label="Sections"></nav>
+  <div class="content">
+    <header class="top" id="top"></header>
+    <main id="main"><p class="muted">Loading your job search…</p></main>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+"use strict";
+/* A string is a group label in the sidebar and null is a divider. */
+const NAV = [["overview","Dashboard","grid"],"Job search",["jobs","Browse jobs","search"],["pipeline","Applications","file"],["outreach","Outreach","mail"],"You",["strategy","Strategy","target"],["profile","Profile","user"],null,["runs","Runs","clock"]];
+const TITLES = {overview:"Dashboard",jobs:"Browse jobs",pipeline:"Applications",application:"Application",cvdesign:"Choose a design",outreach:"Outreach",message:"Message",strategy:"Strategy",runs:"Runs",profile:"Profile"};
+const ICONS = {
+  grid:"M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
+  search:"M10.5 17.5a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20.5 20.5l-5-5",
+  file:"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6",
+  mail:"M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l9 6 9-6",
+  target:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM12 12.5v-1",
+  clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 3",
+  user:"M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+  bell:"M6 9a6 6 0 1 1 12 0c0 6 2.5 8 2.5 8h-17S6 15 6 9M10 20.5a2 2 0 0 0 4 0",
+};
+const STATUSES = [["saved","Saved"],["preparing","Preparing"],["ready","Ready to apply"],["applied","Applied"],["screening","Screening"],["interview","Interview"],["offer","Offer"],["rejected","Rejected"]];
+const STATUS_TONE = {saved:"plain",preparing:"info",ready:"warn",applied:"good",screening:"info",interview:"info",offer:"good",rejected:"bad"};
+/* Before applying, a job has no applied date; moving a card back to one of these clears it. */
+const PRE = ["saved","preparing","ready"];
+/* The stages after an application is sent, in order. LIVE ones are waiting on the employer. */
+const STAGES = [["applied","Applied"],["screening","Screening"],["interview","Interview"],["offer","Offer"]];
+const SENT_RANK = {applied:1,screening:2,interview:3,offer:4};
+const LIVE = ["applied","screening","interview"];
+const BOARD_COLS = [["todo","To apply",PRE],["applied","Applied",["applied"]],["screening","Screening",["screening"]],["interview","Interview",["interview"]],["offer","Offer",["offer"]],["closed","Closed",["rejected"]]];
+const OUT_LABELS = {draft:"Draft",requested:"Request sent",sent:"Sent",replied:"Replied",no_reply:"No reply",not_interested:"Not interested",not_needed:"Not needed"};
+/* Outreach is sorted by what you need to do next with each message. */
+const OUT_TABS = [["draft","To send"],["waiting","Sent, waiting"],["due","Follow-up due"],["replied","Replied"],["closed","Closed"],["all","All"]];
+/* A LinkedIn message can wait on a connection request before it is sent; both count as waiting on the other person. */
+const OUT_LIVE = ["requested","sent"];
+const OUT_TAB_TEST = { draft:m=>m.status==="draft", waiting:m=>OUT_LIVE.includes(m.status)&&!(m.followUpDate&&m.followUpDate<=today()), due:m=>OUT_LIVE.includes(m.status)&&!!m.followUpDate&&m.followUpDate<=today(),
+  replied:m=>m.status==="replied", closed:m=>["no_reply","not_interested","not_needed"].includes(m.status), all:()=>true };
+const OUT_TONE = {draft:"warn",requested:"info",sent:"info",replied:"good",no_reply:"plain",not_interested:"bad",not_needed:"plain"};
+const OUT_TYPES = [["job","Job"],["referral","Referral"],["recruiter","Recruiter"],["intro","Intro"],["pitch","Pitch"]];
+const CHANNELS = {email:"Email",linkedin:"LinkedIn",whatsapp:"WhatsApp"};
+const KINDS = {hiring_manager:"Hiring manager",founder:"Founder",recruiter:"Recruiter",agency:"Agency",referral:"Someone you know",general:"General contact"};
+const FITS = [["strong","Strong fit, apply now"],["good","Good fit"],["stretch","Stretch, startups only"]];
+const DAILY_APPS = 8, DAILY_MSGS = 15, WEEKLY_RECRUITERS = 15, WEEKLY_PITCHES = 2;
+const typeOf = m => m.type||"intro";
+const FLAGS = {requires_uae_experience:"Asks for UAE experience",too_senior:"Too senior",below_salary_target:"Below salary target",off_target:"Off target",stale:"Stale listing",stale_listing:"Stale listing",uae_nationals_only:"UAE nationals only"};
+/* Archiving sets hidden, which the scripts already skip, plus a reason so the list can be reviewed and restored. */
+const ARCHIVE_REASONS = [["low_score","Low score"],["off_target","Off target"],["too_senior","Too senior"],["uae_experience","Needs UAE experience"],["nationals_only","UAE nationals only"],["stale","Stale listing"],["other","Other"]];
+const STALE_DAYS = 21;
+/* "Dubai, Dubai, United Arab Emirates" reads as "Dubai, United Arab Emirates". */
+const shortLoc = s => { const parts = [...new Set(String(s||"").split(",").map(x=>x.trim()).filter(Boolean))]; return parts.length>2 ? parts[0]+", "+parts[parts.length-1] : parts.join(", "); };
+/* One row per search: what it found and whether it finds jobs the user can actually get. */
+function searchStats() {
+  const groups = new Map();
+  for (const r of state.runs) { const key = r.source+"|"+(r.query||""); const g = groups.get(key)||{source:r.source,query:r.query||"",runs:[],found:0,cost:0,last:""};
+    g.runs.push(r.id); g.found += r.found||0; g.cost += r.costUsd||0; if ((r.createdAt||"")>g.last) g.last = r.createdAt||""; groups.set(key,g); }
+  return [...groups.values()].map(g=>{ const jobs = state.jobs.filter(j=>g.runs.includes(j.runId)), scored = jobs.filter(j=>j.score!=null);
+    const good = scored.filter(j=>j.score>=50).length, poor = jobs.filter(j=>list(j.flags).some(f=>f==="too_senior"||f==="off_target")).length;
+    const verdict = !jobs.length ? ["Not linked yet","plain"] : !scored.length ? ["Not scored yet","plain"] : scored.length<5 ? ["Too few to tell","plain"] : good/scored.length>=0.2 ? ["Keep","good"] : poor/jobs.length>0.5 ? ["Change it","bad"] : ["Mixed","warn"];
+    return {...g, jobs:jobs.length, good, poor, best:scored.length?Math.max(...scored.map(j=>j.score)):null, avg:scored.length?Math.round(scored.reduce((n,j)=>n+j.score,0)/scored.length):null, verdict}; })
+    .sort((a,b)=>b.last.localeCompare(a.last));
+}
+const reasonLabel = r => ARCHIVE_REASONS.find(x=>x[0]===r)?.[1]||"No reason";
+
+const state = { view:"overview", jobId:null, appId:null, msgId:null, cvKind:"resume", cvPick:null, jobs:[], companies:[], outreach:[], runs:[], profile:{}, brief:null, settings:{}, loaded:false, slow:false, unavailable:false };
+const filters = { q:"", source:"", score:"", location:"", since:"", remote:false, show:"active", suggested:false, reason:"", runs:null, runLabel:"" };
+let archiveFor = null, removeFor = null, pickReason = "suggested";
+/* Ticked jobs on Browse jobs, kept while you filter so you can pick across searches. */
+const picked = new Set();
+const outFilters = { type:"", tab:"draft" };
+const drafts = {};
+let db = null, downloads = null, pending = false, topQ = "", period = "all";
+const pipe = { view:"board", filter:"open", q:"" };
+try { if (localStorage.getItem("jh.view")==="table") pipe.view = "table"; } catch {}
+let appView = { id:null, tab:"resume", edit:null };
+const cal = { month:null, day:null };
+let profSec = "basics";
+const PROFILE_SECTIONS = [["basics","The basics",["full_name","email","phone","linkedin_url","github_url","portfolio_url"]],
+  ["looking","What you're looking for",["target_roles","target_locations","experience_level","work_status","must_haves","deal_breakers"]],
+  ["pay","Pay and goals",["salary_floor_aed","salary_preferred_min_aed","salary_preferred_max_aed","weekly_goal_min","weekly_goal_max","apify_monthly_budget_usd"]],
+  ["proof","Skills and projects",["skills","portfolio_projects"]],["resume","Base resume",["resume_text"]],["data","Your data",[]]];
+/* What Claude needs before it can score jobs and write documents well. */
+const PROFILE_NEEDS = [["full_name","your name"],["email","an email"],["phone","a phone number"],["linkedin_url","your LinkedIn link"],["target_roles","target roles"],["target_locations","locations"],
+  ["work_status","your work status"],["skills","skills"],["portfolio_projects","portfolio projects"],["resume_text","a base resume"]];
+const KEEP_VERSIONS = 5;
+
+/* Everything scraped goes in as text nodes, never as markup. */
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k,v] of Object.entries(props||{})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "class") el.className = v;
+    else if (k === "value") el.value = v;
+    else if (k === "checked" || k === "selected" || k === "disabled" || k === "draggable") el[k] = !!v;
+    else el.setAttribute(k, v);
+  }
+  el.append(...kids.flat(Infinity).filter(x => x != null && x !== false).map(x => typeof x === "number" ? String(x) : x));
+  return el;
+}
+function s(tag, attrs, ...kids) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k,v] of Object.entries(attrs||{})) el.setAttribute(k, v);
+  el.append(...kids.map(k => k instanceof Node ? k : String(k)));
+  return el;
+}
+const icon = (name, size=18) => s("svg",{viewBox:"0 0 24 24",width:size,height:size,fill:"none",stroke:"currentColor","stroke-width":1.6,"stroke-linecap":"round","stroke-linejoin":"round","aria-hidden":"true"},s("path",{d:ICONS[name]}));
+const ring = score => { const c = 2*Math.PI*18;
+  return s("svg",{class:"ring",viewBox:"0 0 44 44",width:46,height:46,role:"img","aria-label":`Score ${score} out of 100`},
+    s("circle",{cx:22,cy:22,r:18,fill:"none",stroke:"currentColor","stroke-opacity":.2,"stroke-width":3}),
+    s("circle",{cx:22,cy:22,r:18,fill:"none",stroke:"currentColor","stroke-width":3,"stroke-linecap":"round","stroke-dasharray":`${c*Math.max(0,Math.min(100,score))/100} ${c}`,transform:"rotate(-90 22 22)"}),
+    s("text",{x:22,y:22,"text-anchor":"middle","dominant-baseline":"central"},score)); };
+const tint = name => "t"+(1+[...String(name||"")].reduce((n,ch)=>n+ch.charCodeAt(0),0)%4);
+const initial = name => (String(name||"?").trim()[0]||"?").toUpperCase();
+const safeUrl = v => { try { const u = new URL(String(v).trim()); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
+const extLink = (url, label, cls="btn") => safeUrl(url) ? h("a",{class:cls,href:safeUrl(url),target:"_blank",rel:"noopener noreferrer"},label) : null;
+const today = () => new Date().toISOString().slice(0,10);
+const addDays = n => new Date(Date.now()+n*864e5).toISOString().slice(0,10);
+const within = (iso,days) => iso && Date.parse(iso) >= Date.now()-days*864e5;
+const list = v => Array.isArray(v) ? v : [];
+const ago = iso => { const m = (Date.now()-Date.parse(iso))/6e4; if (!(m>=0)) return "–";
+  if (m<60) return Math.max(1,Math.round(m))+" min ago"; const hr = Math.round(m/60); if (hr<24) return hr+(hr===1?" hour ago":" hours ago");
+  const d = Math.round(hr/24); return d+(d===1?" day ago":" days ago"); };
+
+/* Counts trust the status, so a job moved back before applying never counts as applied, even with an old date left on it. */
+const isApplied = j => !!(j.app && j.app.appliedAt && !PRE.includes(j.app.status));
+const companyOf = j => state.companies.find(c=>(c.name||"").trim().toLowerCase()===(j.company||"").trim().toLowerCase());
+const needsYou = j => (j.app.followUp && j.app.followUp<=today() && LIVE.includes(j.app.status)) || (j.app.status==="ready" && !j.app.resume);
+function dueItems() {
+  const t = today();
+  return [...state.jobs.filter(j=>j.app && j.app.followUp && j.app.followUp<=t && LIVE.includes(j.app.status)).map(j=>({label:j.title+" at "+j.company,due:j.app.followUp,go:()=>open("application",{appId:j.id})})),
+    ...state.outreach.filter(m=>OUT_LIVE.includes(m.status)&&m.followUpDate&&m.followUpDate<=t).map(m=>({label:[state.companies.find(c=>c.id===m.companyId)?.name||"Company",contactOf(m)?.name].filter(Boolean).join(" · ")+" ("+(OUT_TYPES.find(x=>x[0]===typeOf(m))?.[1]||"Intro").toLowerCase()+")",due:m.followUpDate,go:()=>open("message",{msgId:m.id})}))].sort((a,b)=>a.due<b.due?-1:1);
+}
+function progress() {
+  const t = today(), applied = state.jobs.filter(isApplied);
+  return { appsToday: applied.filter(j=>j.app.appliedAt.slice(0,10)===t).length, week: applied.filter(j=>within(j.app.appliedAt,7)).length,
+    msgsToday: state.outreach.filter(m=>(m.sentAt||"").slice(0,10)===t).length, due: dueItems().length };
+}
+const sentThisWeek = type => state.outreach.filter(m=>typeOf(m)===type && within(m.sentAt,7)).length;
+const referralAsks = () => state.jobs.filter(j=>j.app && ["ready","applied"].includes(j.app.status) && list(companyOf(j)?.contacts).some(c=>c.kind==="referral") && !state.outreach.some(m=>m.jobId===j.id && typeOf(m)==="referral"));
+const notesNeeded = () => state.jobs.filter(j=>isApplied(j) && within(j.app.appliedAt,2) && !state.outreach.some(m=>m.jobId===j.id && typeOf(m)==="job"));
+
+/* Each stage change is kept under app.history as {s: stage, at: time}, keyed by a timestamp so one entry can be added or
+   undone without rewriting the rest. The funnel reads how far an application got from it; applications from before this
+   existed only have their current stage, so a rejected one counts as stopped at Applied. */
+const historyOf = a => Object.values((a&&a.history)||{}).filter(e=>e&&e.s).sort((x,y)=>String(x.at).localeCompare(String(y.at)));
+const reached = j => { const a = j.app||{}; let r = SENT_RANK[a.status]||0;
+  for (const e of historyOf(a)) r = Math.max(r, SENT_RANK[e.s]||0);
+  return r || (a.appliedAt ? 1 : 0); };
+const sentAt = j => j.app.appliedAt || historyOf(j.app).find(e=>SENT_RANK[e.s])?.at || j.app.createdAt || "";
+const stageSince = j => { const hist = historyOf(j.app); return hist.length ? hist[hist.length-1].at : (isApplied(j) ? j.app.appliedAt : j.app.createdAt); };
+const OPEN_WORD = {applied:"waiting",screening:"in screening",interview:"interviewing",offer:"deciding"};
+function funnelData(days) {
+  const apps = state.jobs.filter(j=>j.app && reached(j)>0 && (!days || within(sentAt(j), days)));
+  const stages = STAGES.map(([key,label],i)=>{ const got = apps.filter(j=>reached(j)>=i+1), here = got.filter(j=>reached(j)===i+1), rejected = here.filter(j=>j.app.status==="rejected").length;
+    return {key, label, n:got.length, rejected, open:here.length-rejected}; });
+  return {stages, sent:stages[0].n, heard:apps.filter(j=>reached(j)>1||j.app.status==="rejected").length, interviews:stages[2].n};
+}
+/* A flow from left to right: each stage's bar is as tall as the number that reached it, the band carries on those that
+   went further, and the ones that stopped there branch off below with a label. */
+function funnelSvg(f) {
+  const X = [0,270,540,810], BW = 10, Y0 = 78, unit = Math.min(26, 120/f.sent), kids = [];
+  let H = Y0;
+  f.stages.forEach((st,i)=>{ const x = X[i], col = `var(--st-${st.key})`, next = f.stages[i+1], prev = f.stages[i-1], bh = st.n ? Math.max(st.n*unit,3) : 0, cont = next ? next.n*unit : 0;
+    kids.push(s("text",{x,y:14,class:"lab"},st.label), s("text",{x,y:44,class:"num"},st.n),
+      s("text",{x,y:62,class:"sub"}, i===0 ? "Everything you've sent" : st.n ? `${Math.round(st.n/prev.n*100)}% of ${prev.label.toLowerCase()}` : "None yet"));
+    if (!st.n) return;
+    kids.push(s("rect",{x,y:Y0,width:BW,height:bh,rx:2,fill:col},s("title",{},`${st.label}: ${st.n}`)));
+    if (next && next.n) { const x1 = x+BW, x2 = X[i+1], m = (x1+x2)/2;
+      kids.push(s("path",{d:`M${x1},${Y0}C${m},${Y0} ${m},${Y0} ${x2},${Y0}L${x2},${Y0+cont}C${m},${Y0+cont} ${m},${Y0+cont} ${x1},${Y0+cont}Z`,fill:col,opacity:.28},s("title",{},`${next.n} of ${st.n} went on to ${next.label.toLowerCase()}`))); }
+    let yo = Y0+cont, ny = Y0+bh+18;
+    for (const [n,word,c] of [[st.open,OPEN_WORD[st.key],col],[st.rejected,i===3?"closed":"rejected","var(--st-closed)"]]) { if (!n) continue;
+      const hgt = n*unit, nh = Math.max(hgt,4), x1 = x+BW, x2 = x+78, m = (x1+x2)/2;
+      kids.push(s("path",{d:`M${x1},${yo}C${m},${yo} ${m},${ny} ${x2},${ny}L${x2},${ny+nh}C${m},${ny+nh} ${m},${yo+hgt} ${x1},${yo+hgt}Z`,fill:c,opacity:.28}),
+        s("rect",{x:x2,y:ny,width:8,height:nh,rx:2,fill:c},s("title",{},`${n} ${word}`)), s("text",{x:x2+16,y:ny+nh/2+4},`${n} ${word}`));
+      yo += hgt; ny += nh+20; }
+    H = Math.max(H, ny); });
+  return s("svg",{class:"fn",viewBox:`0 0 980 ${Math.ceil(H)+4}`,role:"img","aria-label":"Funnel: "+f.stages.map(st=>`${st.n} reached ${st.label.toLowerCase()}`).join(", ")},...kids);
+}
+function funnelCard(f) {
+  const pct = (a,b) => b ? Math.round(a/b*100)+"%" : "–";
+  return h("section",{class:"card stack"},
+    h("div",{class:"row between",style:"align-items:flex-start;gap:16px"},
+      h("div",{},h("h2",{class:"serif"},"Your funnel"),h("p",{class:"small muted"},"How far each application you've sent has got, and where the ones that stopped are now.")),
+      h("div",{class:"hero"},[[f.sent,"sent"],[pct(f.heard,f.sent),"heard back"],[f.interviews,"reached interview"]].map(([n,l])=>h("div",{},h("b",{},n),h("span",{},l))))),
+    f.sent ? h("div",{class:"scrollx"},funnelSvg(f)) : empty("Nothing sent in this period yet. When you mark an application as applied, it shows up here."),
+    f.sent>0&&h("details",{class:"nums"},h("summary",{},"Show the numbers"),h("div",{class:"card flush",style:"margin-top:10px"},h("table",{},
+      h("thead",{},h("tr",{},h("th",{},"Stage"),["Reached","Still there","Stopped there"].map(x=>h("th",{class:"r"},x)))),
+      h("tbody",{},f.stages.map(st=>h("tr",{},h("td",{},st.label),h("td",{class:"r"},st.n),h("td",{class:"r"},st.open),h("td",{class:"r"},st.rejected))))))));
+}
+/* Weeks start on Monday. "Started" is when the application was created, "sent" is when it was marked applied. */
+function weekData(days) {
+  const apps = state.jobs.filter(j=>j.app), monday = d => { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
+  const first = apps.map(j=>Date.parse(j.app.createdAt||sentAt(j)||"")).filter(Boolean).sort((a,b)=>a-b)[0];
+  const n = days ? Math.ceil(days/7)+1 : Math.max(6, Math.min(16, first ? Math.ceil((Date.now()-first)/6048e5)+1 : 6));
+  const start = monday(Date.now()); start.setDate(start.getDate()-7*(n-1));
+  const weeks = Array.from({length:n},(_,i)=>{ const from = new Date(start); from.setDate(from.getDate()+7*i); return {from, started:0, sent:0}; });
+  const slot = iso => { const t = Date.parse(iso||""); if (!t) return null; return weeks[Math.floor((monday(t)-start)/6048e5+.5)]||null; };
+  for (const j of apps) { const a = slot(j.app.createdAt); if (a) a.started++; if (reached(j)>0) { const b = slot(sentAt(j)); if (b) b.sent++; } }
+  return weeks;
+}
+const weekName = d => d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+function weekSvg(weeks) {
+  const W = 900, H = 190, L = 26, B = 24, T = 10, max = Math.max(1,...weeks.map(w=>Math.max(w.started,w.sent))), gw = (W-L)/weeks.length, bw = Math.min(14, gw/3.2), ph = H-B-T, base = T+ph;
+  const y = v => base-(v/max)*ph, kids = [];
+  for (const v of [...new Set([0, Math.ceil(max/2), max])]) kids.push(s("line",{x1:L,x2:W,y1:y(v),y2:y(v),stroke:"var(--line)"}), s("text",{x:L-8,y:y(v)+4,"text-anchor":"end"},v));
+  const bar = (x,v,fill) => { const top = y(v), r = Math.min(4,bw/2,base-top); return s("path",{d:`M${x},${base}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${base}Z`,fill}); };
+  weeks.forEach((w,i)=>{ const cx = L+gw*i+gw/2;
+    if (w.started) kids.push(bar(cx-bw-1,w.started,"var(--st-todo)"));
+    if (w.sent) kids.push(bar(cx+1,w.sent,"var(--st-applied)"));
+    if (weeks.length<=8 || i%2===(weeks.length-1)%2) kids.push(s("text",{x:cx,y:H-6,"text-anchor":"middle"},weekName(w.from)));
+    kids.push(s("rect",{x:L+gw*i,y:T,width:gw,height:ph,fill:"transparent"},s("title",{},`Week of ${weekName(w.from)}: ${w.started} started, ${w.sent} sent`))); });
+  return s("svg",{class:"wk",viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Applications started and sent each week"},...kids);
+}
+function weekCard(weeks) {
+  const started = weeks.reduce((n,w)=>n+w.started,0), sent = weeks.reduce((n,w)=>n+w.sent,0);
+  return h("section",{class:"card stack"},
+    h("div",{class:"row between",style:"align-items:flex-start;gap:16px"},
+      h("div",{},h("h2",{class:"serif"},"Week by week"),h("p",{class:"small muted"},`You started ${started} ${started===1?"application":"applications"} and sent ${sent} in this period.`)),
+      h("div",{class:"legend"},h("span",{class:"key"},h("i",{style:"background:var(--st-todo)"}),"Started"),h("span",{class:"key"},h("i",{style:"background:var(--st-applied)"}),"Sent"))),
+    h("div",{class:"scrollx"},weekSvg(weeks)),
+    h("details",{class:"nums"},h("summary",{},"Show the numbers"),h("div",{class:"card flush",style:"margin-top:10px"},h("table",{},
+      h("thead",{},h("tr",{},h("th",{},"Week of"),h("th",{class:"r"},"Started"),h("th",{class:"r"},"Sent"))),
+      h("tbody",{},weeks.map(w=>h("tr",{},h("td",{},weekName(w.from)),h("td",{class:"r"},w.started),h("td",{class:"r"},w.sent))))))));
+}
+/* Dates the user works to: an apply-by date on the job, an interview time on the application, and follow-ups.
+   Shown in local time. The calendar and the board chips read them from here. */
+const pad2 = n => String(n).padStart(2,"0");
+const localDay = (d=new Date()) => d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+const dayOf = v => String(v||"").slice(0,10);
+const niceDay = v => { const d = new Date(dayOf(v)+"T00:00"); return isNaN(d) ? "" : d.toLocaleDateString("en-GB",{day:"numeric",month:"short"}); };
+const daysTo = v => Math.round((Date.parse(dayOf(v)+"T00:00")-Date.parse(localDay()+"T00:00"))/864e5);
+const interviewText = a => a.interviewAt ? "Interview "+niceDay(a.interviewAt)+(String(a.interviewAt).length>10?", "+String(a.interviewAt).slice(11,16):"") : "";
+const interviewAhead = j => !!(j.app && j.app.interviewAt && j.app.status!=="rejected" && daysTo(j.app.interviewAt)>=0);
+const deadlineOpen = j => !!(j.deadline && j.app && PRE.includes(j.app.status));
+const deadlineChip = j => { if (!deadlineOpen(j)) return null; const n = daysTo(j.deadline);
+  return h("span",{class:"badge "+(n<0?"b-bad":n<=3?"b-warn":"b-plain")}, n<0 ? "Deadline passed" : "Apply by "+niceDay(j.deadline)); };
+const interviewChip = j => interviewAhead(j) ? h("span",{class:"badge b-info"},interviewText(j.app)) : null;
+const EVENT_KINDS = {interview:["Interview","var(--st-interview)"],deadline:["Apply by","var(--st-offer)"],followup:["Follow up","var(--st-applied)"]};
+function calendarEvents() {
+  const ev = [];
+  for (const j of state.jobs.filter(j=>j.app)) { const a = j.app, name = j.title+(j.company?" · "+j.company:""), go = ()=>open("application",{appId:j.id});
+    if (a.interviewAt && a.status!=="rejected") ev.push({day:dayOf(a.interviewAt), time:String(a.interviewAt).slice(11,16), kind:"interview", label:name, go});
+    if (deadlineOpen(j)) ev.push({day:dayOf(j.deadline), kind:"deadline", label:name, go});
+    if (a.followUp && LIVE.includes(a.status)) ev.push({day:dayOf(a.followUp), kind:"followup", label:name, go}); }
+  for (const m of state.outreach.filter(m=>OUT_LIVE.includes(m.status)&&m.followUpDate))
+    ev.push({day:dayOf(m.followUpDate), kind:"followup", label:[contactOf(m)?.name,state.companies.find(c=>c.id===m.companyId)?.name].filter(Boolean).join(" · ")||"Message", go:()=>open("message",{msgId:m.id})});
+  return ev.sort((a,b)=>(a.day+(a.time||"")).localeCompare(b.day+(b.time||"")));
+}
+/* A month grid, Monday first. Days with something on them are buttons; picking one lists that day, otherwise the next 14 days show. */
+function calendarCard() {
+  const ev = calendarEvents(), now = localDay(), month = cal.month || now.slice(0,7), [y,m] = month.split("-").map(Number);
+  const first = new Date(y,m-1,1), lead = (first.getDay()+6)%7, days = new Date(y,m,0).getDate(), monthName = first.toLocaleDateString("en-GB",{month:"long"});
+  const shift = n => { cal.month = localDay(new Date(y,m-1+n,1)).slice(0,7); cal.day = null; render(true); };
+  const on = d => ev.filter(e=>e.day===d);
+  const shown = cal.day ? on(cal.day) : ev.filter(e=>e.day>=now && daysTo(e.day)<=14).slice(0,6);
+  return h("section",{class:"card stack"},
+    h("div",{class:"row between"},h("h2",{class:"serif"},"Calendar"),
+      h("div",{class:"row",style:"gap:6px;flex-wrap:nowrap"},h("button",{class:"btn mstep","aria-label":"Previous month",onclick:()=>shift(-1)},"‹"),
+        h("span",{style:"min-width:14ch;text-align:center"},monthName+" "+y),h("button",{class:"btn mstep","aria-label":"Next month",onclick:()=>shift(1)},"›"))),
+    h("div",{class:"calgrid"},["M","T","W","T","F","S","S"].map(d=>h("span",{class:"calhead","aria-hidden":"true"},d)),
+      Array.from({length:lead},()=>h("span",{})),
+      Array.from({length:days},(_,i)=>{ const d = month+"-"+pad2(i+1), es = on(d), kinds = [...new Set(es.map(e=>e.kind))];
+        return h("button",{class:"calday"+(d===now?" today":"")+(d===cal.day?" on":""),disabled:!es.length,"aria-pressed":es.length?String(d===cal.day):null,
+          "aria-label":`${i+1} ${monthName}`+(es.length?`, ${es.length} ${es.length===1?"item":"items"}`:""),onclick:()=>{cal.day=cal.day===d?null:d;render(true)}},
+          h("span",{},i+1),h("span",{class:"caldots"},kinds.map(k=>h("i",{style:"background:"+EVENT_KINDS[k][1]})))); })),
+    h("div",{class:"legend"},Object.values(EVENT_KINDS).map(([l,c])=>h("span",{class:"key"},h("i",{style:"background:"+c}),l))),
+    h("div",{class:"stack-sm"},h("div",{class:"row between"},h("p",{class:"small muted"},cal.day?"On "+niceDay(cal.day):"Next 14 days"),cal.day&&h("button",{class:"link small muted",onclick:()=>{cal.day=null;render(true)}},"Show next 14 days")),
+      shown.length ? h("ul",{class:"divide"},shown.map(e=>h("li",{class:"row between",style:"padding:8px 0;flex-wrap:nowrap;gap:12px"},
+          h("button",{class:"link clip",style:"min-width:0",onclick:e.go},h("span",{class:"dot",style:"margin-right:8px;background:"+EVENT_KINDS[e.kind][1]}),EVENT_KINDS[e.kind][0]+": "+e.label),
+          h("span",{class:"small muted",style:"white-space:nowrap"},niceDay(e.day)+(e.time?", "+e.time:"")))))
+        : empty(cal.day?"Nothing on this day.":"Nothing in the next 14 days. Add an interview or apply-by date on an application's Notes tab.")));
+}
+/* What needs the user next: follow-ups that are due, interviews, apply-by dates that are close, applications ready to send and offers. */
+function worthALook() {
+  const items = dueItems().map(d=>({label:d.label, tag:"Follow up, due "+d.due, tone:"bad", go:d.go}));
+  for (const j of state.jobs.filter(j=>j.app)) { const a = j.app, label = j.title+" at "+(j.company||"a company"), go = ()=>open("application",{appId:j.id});
+    if (a.status==="offer") items.push({label, tag:"Offer to answer", tone:"good", go});
+    else if (interviewAhead(j) && LIVE.includes(a.status)) items.push({label, tag:interviewText(a), tone:"info", go});
+    else if (a.status==="interview") items.push({label, tag:"Interview: add the date", tone:"info", go});
+    else if (deadlineOpen(j) && daysTo(j.deadline)<=3) items.push({label, tag:daysTo(j.deadline)<0?"Deadline passed":"Apply by "+niceDay(j.deadline), tone:daysTo(j.deadline)<0?"bad":"warn", go});
+    else if (a.status==="ready") items.push({label, tag:a.resume?"Ready to send":"Needs a resume", tone:"warn", go}); }
+  return items;
+}
+const versionsOf = (a, key) => Object.entries((a&&a.versions)||{}).filter(([,v])=>v&&v.kind===key&&v.text).map(([id,v])=>({id,...v})).sort((x,y)=>String(y.at).localeCompare(String(x.at)));
+/* The part of an update that keeps the current text as a version and drops the oldest ones past the limit. */
+function keepVersion(a, key, id) {
+  const old = String(a[key]||""); if (!old.trim()) return {};
+  const patch = {[id]:{kind:key, text:old, at:new Date().toISOString()}};
+  for (const v of versionsOf(a,key).slice(KEEP_VERSIONS-1)) patch[v.id] = null;
+  return patch;
+}
+async function backup() {
+  if (!downloads) return toast("Downloads aren't available in this view.");
+  const data = JSON.stringify({exportedAt:new Date().toISOString(), settings:state.settings, jobs:state.jobs, companies:state.companies, outreach:state.outreach, runs:state.runs}, null, 1);
+  try { await downloads.save({filename:`${localDay()} - Job Hunt backup.json`, data}); toast("Backup saved"); }
+  catch (e) { if (e.code!=="declined") toast("The backup couldn't be saved here."); }
+}
+const greeting = () => { const hr = new Date().getHours(), name = String(state.profile.full_name||"").trim().split(/\s+/)[0];
+  return "Good "+(hr<12?"morning":hr<18?"afternoon":"evening")+(name?", "+name:""); };
+const resetJobFilters = () => Object.assign(filters,{q:"",source:"",score:"",location:"",since:"",remote:false,show:"active",suggested:false,reason:"",runs:null,runLabel:""});
+
+let toastTimer;
+function toast(text, action) {
+  const t = document.getElementById("toast");
+  t.replaceChildren(...[h("span",{},text), action && h("button",{class:"link",style:"text-decoration:underline;font-weight:500",onclick:()=>{t.hidden=true;action.fn()}},action.label)].filter(Boolean));
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{t.hidden=true}, action?7000:2600);
+}
+async function write(fn, done, undo) {
+  try { await fn(); if (done) toast(done, undo && {label:"Undo",fn:()=>undo().catch(()=>{})}); }
+  catch (e) { toast(e && e.code === "quota_exceeded" ? "Storage is full. Remove old jobs, then try again." : "That didn't save. Check your connection and try again."); throw e; }
+}
+const updateJob = (id, data, done) => write(()=>db.doc("jobs/"+id).update(data), done);
+/* Jobs already in the pipeline are closed with Rejected instead, so only loose listings are suggested or archived. */
+function archiveSuggestion(j) {
+  if (j.hidden || j.app) return null;
+  const f = list(j.flags), seen = j.postedAt || j.createdAt;
+  if (f.includes("too_senior")) return "too_senior";
+  if (f.includes("off_target")) return "off_target";
+  if (f.includes("requires_uae_experience")) return "uae_experience";
+  if (f.includes("uae_nationals_only")) return "nationals_only";
+  if (f.includes("stale") || f.includes("stale_listing") || (seen && !within(seen, STALE_DAYS))) return "stale";
+  if (j.score != null && j.score < 50) return "low_score";
+  return null;
+}
+const archivePatch = reason => ({hidden:true, archiveReason:reason, archivedAt:new Date().toISOString()});
+const restorePatch = {hidden:false, archiveReason:null, archivedAt:null};
+function restoreJobs(jobs, done) {
+  const before = jobs.map(j=>[j,j.archiveReason||"other"]);
+  return write(()=>Promise.all(jobs.map(j=>db.doc("jobs/"+j.id).update(restorePatch))), done,
+    ()=>write(()=>Promise.all(before.map(([j,r])=>db.doc("jobs/"+j.id).update(archivePatch(r)))), "Archived again"));
+}
+function archiveJobs(items, done) {
+  const jobs = items.map(([j])=>j);
+  return write(()=>Promise.all(items.map(([j,r])=>db.doc("jobs/"+j.id).update(archivePatch(r)))), done,
+    ()=>write(()=>Promise.all(jobs.map(j=>db.doc("jobs/"+j.id).update(restorePatch))), jobs.length===1?"Restored":"Restored "+jobs.length+" jobs"));
+}
+
+function field(key, value, {rows, type="text", label, cls="", placeholder}={}) {
+  const val = drafts[key] ?? value ?? "";
+  const on = { oninput:e=>{drafts[key]=e.target.value} };
+  const id = "f-"+key.replace(/[^\w-]/g,"-"), name = label || placeholder;
+  const el = rows ? h("textarea",{id,rows,class:"field "+cls,value:val,placeholder,"aria-label":name,...on})
+                  : h("input",{id,type,class:"field "+cls,value:val,placeholder,"aria-label":name,...on});
+  return label ? h("div",{},h("label",{class:"label",for:id},label),el) : el;
+}
+const take = (key, fallback) => { const v = drafts[key]; return v === undefined ? fallback : v; };
+function clearDrafts(prefix) { for (const k of Object.keys(drafts)) if (k.startsWith(prefix)) delete drafts[k]; }
+function empty(...kids) { return h("p",{class:"muted"},kids); }
+/* The morning brief is Markdown written by Claude. Headings, bullets, bold and links only, built as elements, never as markup. */
+function md(text) {
+  const spans = s => { const parts=[]; let last=0;
+    for (const m of s.matchAll(/\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g)) { if (m.index>last) parts.push(s.slice(last,m.index)); parts.push(m[1]?h("strong",{style:"font-weight:500"},m[1]):(extLink(m[3],m[2],"")||m[2])); last=m.index+m[0].length; }
+    if (last<s.length) parts.push(s.slice(last)); return parts; };
+  const out = []; let ul = null;
+  for (const raw of String(text||"").split("\n")) {
+    const line = raw.trim(), head = line.match(/^#{1,3}\s+(.*)$/), item = line.match(/^[-*]\s+(.*)$/);
+    if (item) { if (!ul) out.push(ul = h("ul",{class:"bullets stack-sm"})); ul.append(h("li",{},spans(item[1]))); continue; }
+    ul = null;
+    if (line) out.push(head ? h("h3",{class:"h2",style:"margin-top:8px"},spans(head[1])) : h("p",{},spans(line)));
+  }
+  return out;
+}
+const contactOf = m => list(state.companies.find(c=>c.id===m.companyId)?.contacts).find(c=>c.id===m.contactId);
+/* Contacts that /find-hiring-contact or /add-network saved but that have no message yet, unless marked Not needed. */
+const idleContacts = () => state.companies.flatMap(co=>list(co.contacts).filter(ct=>!ct.skip&&!state.outreach.some(m=>m.companyId===co.id&&m.contactId===ct.id)).map(ct=>({co,ct})));
+function skipContact(co, ct) {
+  const mark = v => ({contacts:list(co.contacts).map(c=>c.id===ct.id?{...c,skip:v}:c),updatedAt:new Date().toISOString()});
+  return write(()=>db.doc("companies/"+co.id).update(mark(true)),"Not needed: "+(ct.name||"contact"),()=>write(()=>db.doc("companies/"+co.id).update(mark(false)),"Undone"));
+}
+function copyBtn(text, label="Copy message") {
+  return h("button",{class:"btn",onclick:async()=>{ try { await navigator.clipboard.writeText(text); toast("Copied"); } catch { toast("Copy was blocked. Select the text and copy it by hand."); } }},label);
+}
+const bar = (label, n, goal) => h("div",{class:"stack-sm"},h("div",{class:"row between"},h("span",{},label),h("span",{class:"muted"},`${n} of ${goal}`)),h("span",{class:"bar"},h("i",{style:`width:${Math.min(100,n/Math.max(1,goal)*100)}%`})));
+const addToPipeline = async j => { await updateJob(j.id,{app:{status:"saved",createdAt:new Date().toISOString()}}); open("application",{appId:j.id}); };
+const searchJobs = q => { filters.q = q; state.jobId = null; open("jobs"); };
+
+/* Applying and interviewing both mean an application went in, so the weekly count stays right when a card skips a column.
+   Going back before Applied clears the applied date, its reminder and the stage history; Undo puts the card back exactly as it was. */
+function setStatus(job, status) {
+  const a = job.app||{}, now = new Date().toISOString(), key = "t"+Date.now(), patch = {status};
+  const before = {status:a.status, appliedAt:a.appliedAt||null, followUp:a.followUp||null};
+  if (PRE.includes(status)) { patch.appliedAt = null; patch.history = null; before.history = a.history||null; if (!PRE.includes(a.status)) patch.followUp = null; }
+  else {
+    if (SENT_RANK[status] && !a.appliedAt) patch.appliedAt = now;
+    if (status === "applied" && !a.followUp) patch.followUp = addDays(14);
+    patch.history = {[key]:{s:status, at:now}}; before.history = {[key]:null};
+  }
+  return write(()=>db.doc("jobs/"+job.id).update({app:patch}), "Moved to "+STATUSES.find(x=>x[0]===status)[1], ()=>updateJob(job.id,{app:before},"Undone"));
+}
+/* Removing an application drops its documents and notes too; Undo puts back the application and the job's archive state exactly as they were. */
+function removeApp(j, reason) {
+  const before = {app:j.app, hidden:!!j.hidden, archiveReason:j.archiveReason||null, archivedAt:j.archivedAt||null};
+  removeFor = null;
+  return write(()=>db.doc("jobs/"+j.id).update({app:null, ...(reason?archivePatch(reason):{})}),
+    reason ? "Removed and archived: "+reasonLabel(reason).toLowerCase() : "Removed from applications",
+    ()=>updateJob(j.id,before,"Back in applications")).then(()=>open("pipeline"));
+}
+/* Referral asks get a gentler, earlier nudge than cold messages. A connection request gets a week to be accepted.
+   Unsend puts a message back to To send; Undo in the toast restores it exactly as it was. */
+function setOutreach(m, status) {
+  const now = new Date().toISOString(), patch = {status, updatedAt:now};
+  const before = {status:m.status, sentAt:m.sentAt||null, requestedAt:m.requestedAt||null, followUpDate:m.followUpDate||null};
+  if (status === "sent") { patch.sentAt = m.sentAt||now; patch.followUpDate = m.status==="sent"&&m.followUpDate ? m.followUpDate : addDays(typeOf(m)==="referral"?4:5); }
+  else if (status === "requested") { patch.requestedAt = m.requestedAt||now; patch.sentAt = null; patch.followUpDate = addDays(7); }
+  else if (status === "draft") { patch.sentAt = null; patch.requestedAt = null; patch.followUpDate = null; }
+  else patch.followUpDate = null;
+  const done = status==="draft" ? "Unsent. It's back in To send" : "Marked "+OUT_LABELS[status].toLowerCase();
+  return write(()=>db.doc("outreach/"+m.id).update(patch), done, ()=>write(()=>db.doc("outreach/"+m.id).update({...before,updatedAt:new Date().toISOString()}),"Undone"));
+}
+const EMAIL_RE = /^[^\s@?&]+@[^\s@?&]+\.[^\s@?&]+$/;
+const canReach = (ch, ct) => ch==="email" ? EMAIL_RE.test(ct.email||"") : ch==="whatsapp" ? /^\d{8,15}$/.test(ct.whatsapp||"") : ch==="linkedin" ? /(^|\.)linkedin\.com$/.test((()=>{try{return new URL(safeUrl(ct.linkedinUrl)).hostname}catch{return ""}})()) : false;
+/* Contacts live inside their company document, so the whole list is written back with just this one changed. */
+async function saveContact(co, ct, k) {
+  const email = take(k+"email",ct.email||"").trim(), url = take(k+"linkedinUrl",ct.linkedinUrl||"").trim(), phone = take(k+"whatsapp",ct.whatsapp||"").replace(/\D/g,"");
+  if (email && !EMAIL_RE.test(email)) return toast("That email address doesn't look right.");
+  if (url && !canReach("linkedin",{linkedinUrl:url})) return toast("Paste a full linkedin.com profile link.");
+  if (phone && !/^\d{8,15}$/.test(phone)) return toast("Enter the WhatsApp number with its country code, like 971501234567.");
+  const contacts = list(co.contacts).map(c=>c.id===ct.id?{...c,email,linkedinUrl:url?safeUrl(url):"",whatsapp:phone}:c);
+  await write(()=>db.doc("companies/"+co.id).update({contacts,updatedAt:new Date().toISOString()}),"Contact details saved");
+  clearDrafts(k);
+}
+const open = (view, extra) => { Object.assign(state,{view},extra); render(true); window.scrollTo(0,0); };
+
+function todayCard() {
+  const p = progress();
+  return h("section",{class:"card stack"},h("div",{class:"row between"},h("h2",{class:"h2"},"Today's outreach"),h("button",{class:"link muted",onclick:()=>open("strategy")},"Strategy ›")),
+    bar("Applications sent",p.appsToday,DAILY_APPS),bar("Messages sent",p.msgsToday,DAILY_MSGS),
+    h("div",{class:"row between"},h("span",{},"Follow-ups due"),h("span",{class:p.due?"":"muted"},p.due||"None")));
+}
+
+const views = {
+  overview() {
+    const t = today(), b = state.brief, days = period==="all" ? 0 : Number(period);
+    const top = state.jobs.filter(j=>!j.hidden && j.score!=null && !j.app).sort((a,b)=>b.score-a.score).slice(0,4);
+    const apps = state.jobs.filter(j=>j.app), all = funnelData(0), look = worthALook();
+    const stand = [["To apply","todo",apps.filter(j=>PRE.includes(j.app.status)).length],...STAGES.map(([st,l])=>[l,st,apps.filter(j=>j.app.status===st).length]),["Closed","closed",apps.filter(j=>j.app.status==="rejected").length]];
+    const summary = all.sent ? `You've sent ${all.sent} ${all.sent===1?"application":"applications"} and heard back from ${all.heard}.`+(look.length?` ${look.length} ${look.length===1?"thing needs":"things need"} you below.`:"")
+      : apps.length ? "Nothing sent yet. Your applications are waiting under To apply." : "No applications yet. Pick a top match below to start one.";
+    return h("div",{class:"stack-lg wide"},
+      h("div",{class:"stack"},h("p",{class:"muted",style:"max-width:60ch"},summary),
+        h("div",{class:"row"},h("span",{class:"small muted"},"Showing"),h("div",{class:"pills",role:"group","aria-label":"Period"},
+          [["30","Last 30 days"],["90","Last 90 days"],["all","All time"]].map(([v,l])=>h("button",{class:"pill","aria-pressed":String(period===v),onclick:()=>{period=v;render(true)}},l))))),
+      funnelCard(funnelData(days)),
+      weekCard(weekData(days)),
+      h("div",{class:"cols"},h("div",{class:"stack"},
+        h("section",{class:"card stack"},h("div",{class:"row between"},h("h2",{class:"serif"},"Where things stand"),h("button",{class:"link muted",onclick:()=>open("pipeline")},"Open board ›")),
+          apps.length ? [h("div",{class:"segbar",role:"img","aria-label":stand.map(([l,,n])=>`${l}: ${n}`).join(", ")},stand.filter(x=>x[2]).map(([l,k,n])=>h("i",{style:`flex:${n};background:var(--st-${k})`,title:`${l}: ${n}`}))),
+            h("ul",{class:"stand"},stand.map(([l,k,n])=>h("li",{},h("span",{class:"dot",style:`background:var(--st-${k})`}),h("span",{},l),h("span",{class:n?"":"muted"},n))))]
+            : empty("No applications yet.")),
+        h("section",{class:"card stack-sm",id:"followups"},h("div",{class:"row between"},h("h2",{class:"serif"},"Worth a look"),h("span",{class:"small muted"},look.length?look.length+(look.length===1?" thing":" things"):"")),
+          look.length ? h("ul",{class:"divide"},look.slice(0,6).map(d=>h("li",{class:"row between",style:"padding:10px 0;flex-wrap:nowrap;gap:12px"},h("button",{class:"link clip",style:"min-width:0",onclick:d.go},d.label),h("span",{class:"status s-"+d.tone},d.tag))))
+            : empty("Nothing needs you right now."),
+          look.length>6&&h("button",{class:"link muted small",onclick:()=>{pipe.filter="needs";open("pipeline")}},`and ${look.length-6} more`))),calendarCard()),
+      h("section",{class:"stack"},
+        h("div",{class:"row between"},h("h2",{class:"sec"},"Top job matches"),h("button",{class:"link muted",onclick:()=>open("jobs")},"Browse jobs ›")),
+        top.length ? h("div",{class:"matches"},top.map(j=>{ const tn = tint(j.company);
+          return h("article",{class:"mcard"},
+            h("button",{class:"mtop "+tn,onclick:()=>open("jobs",{jobId:j.id})},h("span",{style:"min-width:0"},h("span",{class:"co"},j.company||"Company"),h("span",{class:"ti"},j.title)),ring(j.score)),
+            h("div",{class:"mfoot"},h("span",{class:"avatar "+tn,style:"width:26px;height:26px;border-radius:8px;font-size:12px"},initial(j.company)),h("span",{class:"name"},[j.company,j.location].filter(Boolean).join(" · ")),
+              h("button",{class:"btn primary",onclick:()=>addToPipeline(j)},"Apply"))); }))
+          : h("p",{class:"card muted"},"Nothing scored yet. In Claude Code, run ",h("kbd",{},"/browse-jobs"),", then ",h("kbd",{},"/score-jobs"),".")),
+      h("div",{class:"cols"},
+        b?.markdown ? h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"serif"},"Today's brief"),h("span",{class:"muted"},b.date===t?"Today":"From "+(b.date||"an earlier day"))),h("div",{class:"stack-sm"},md(b.markdown)))
+          : h("p",{class:"card muted"},"No brief yet. In Claude Code, run ",h("kbd",{},"/morning-brief"),", or let the daily run write it."),
+        todayCard()));
+  },
+
+  strategy() {
+    const p = progress(), pr = state.profile, asks = referralAsks(), notes = notesNeeded();
+    const min = pr.weekly_goal_min||25, max = pr.weekly_goal_max||40;
+    const step = (title, text, stat, cmd) => h("li",{class:"step"},h("div",{class:"stack-sm"},
+      h("div",{class:"row between"},h("h3",{class:"h2"},title),stat&&h("span",{class:"status s-"+stat[1]},stat[0])),h("p",{class:"muted"},text),cmd&&h("p",{},h("kbd",{},cmd))));
+    const sent = OUT_TYPES.map(([t,l])=>{ const out = state.outreach.filter(m=>typeOf(m)===t&&m.sentAt), rep = out.filter(m=>["replied","not_interested"].includes(m.status)).length; return [l,out.length,rep]; });
+    const lanes = list(pr.role_lanes);
+    /* LinkedIn post search, newest first, last 24 hours. The user opens these; Claude never browses LinkedIn. */
+    const postKeys = [...new Set(lanes.filter(l=>l.fit!=="stretch").flatMap(l=>list(l.keywords)))].slice(0,10);
+    const postUrl = k => "https://www.linkedin.com/search/results/content/?keywords="+encodeURIComponent(`hiring "${k}" UAE`)+"&datePosted=%22past-24h%22&sortBy=%22date_posted%22";
+    const postsThisWeek = state.jobs.filter(j=>j.source==="post"&&within(j.createdAt,7)).length;
+    return h("div",{class:"stack narrow"},
+      h("p",{class:"muted"},"Your daily plan, in the order that gets the most replies. The numbers update as you work."),
+      h("section",{class:"card stack"},h("h2",{class:"h2"},"Today"),bar("Applications sent",p.appsToday,DAILY_APPS),bar("Messages sent",p.msgsToday,DAILY_MSGS),bar("Applied this week",p.week,min),
+        h("p",{class:"small muted"},`Weekly goal: ${min} to ${max} applications. About 2 hours a day: apply first, then send, then follow up.`)),
+      h("section",{class:"card"},h("h2",{class:"h2"},"Daily order"),h("ol",{class:"steps"},
+        step("Ask people you know first","For every job you're applying to where a friend or contact works, send a short WhatsApp asking for a referral. Name the exact role and offer to send your CV. A referral is the fastest way to an interview.",
+          [asks.length?asks.length+" to ask":"None waiting",asks.length?"warn":"plain"],"/add-network, then /draft-outreach <company> <job id>"),
+        step("Check LinkedIn hiring posts","10 minutes. Many UAE jobs are only posted as \"we're hiring, send your CV to…\" posts. Open the post searches below, and paste any good post into Claude Code. It saves the job and the person, and drafts your email.",
+          [postsThisWeek+" added this week",postsThisWeek?"good":"plain"],"/add-post <paste the post>"),
+        step("Message the hiring side the same day","Within 24 hours of applying, send the hiring manager or recruiter a short note: you've applied, one thing you noticed about their team, and one project that matches.",
+          [notes.length?notes.length+" without a note":"All covered",notes.length?"warn":"good"],"/find-hiring-contact <job id>, then /draft-outreach"),
+        step("Recruiters, 3 a day","UAE tech recruitment agencies and in-house recruiters. Say what roles you want, that you're in Sharjah with no sponsorship needed, and that you can start now. Skip any agency that charges you.",
+          [sentThisWeek("recruiter")+" of "+WEEKLY_RECRUITERS+" this week","plain"],"/find-recruiters"),
+        step("Pitch companies that aren't hiring","At most 2 a week. Pick a company, spot one manual step on their site, and offer a small automation for it with a short demo.",
+          [sentThisWeek("pitch")+" of "+WEEKLY_PITCHES+" this week",sentThisWeek("pitch")>=WEEKLY_PITCHES?"good":"plain"],"/find-companies, then /draft-outreach <company>"),
+        step("Follow up once","Referrals after 4 days, other messages after 5, applications after 14. One follow-up only, and stop as soon as someone says no.",
+          [p.due?p.due+" due":"None due",p.due?"bad":"plain"],"/morning-brief"))),
+      postKeys.length>0&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"LinkedIn hiring posts"),
+        h("p",{class:"muted"},"Each link opens LinkedIn posts from the last 24 hours, newest first. Look for posts with an email for CVs or a \"DM me\", then paste the post text or a screenshot into ",h("kbd",{},"/add-post"),". You browse LinkedIn yourself; Claude never opens it."),
+        h("div",{class:"row",style:"gap:6px"},postKeys.map(k=>extLink(postUrl(k),k,"chip")))),
+      h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Message rules"),h("ul",{class:"bullets stack-sm"},
+        h("li",{},"Keep it short: email under 120 words, LinkedIn under 80, WhatsApp under 110."),
+        h("li",{},"Mention one specific thing about the company or person, and one matching project with its link."),
+        h("li",{},"End with one small ask, like a 10-minute call or whether they'd pass your CV on."),
+        h("li",{},"Never send the same message to many people. Claude drafts, you read it, then you send it."),
+        h("li",{},"Free LinkedIn gives you only a few personalised connection notes a month, so use email when there's a public address."))),
+      h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Weekly rhythm"),
+        h("p",{class:"muted"},"Monday: run the morning brief and check the week's targets. Friday: look at which message types get replies, do more of those and drop what isn't working."),
+        h("div",{class:"card flush",style:"margin-top:4px"},h("table",{},h("thead",{},h("tr",{},h("th",{},"Message type"),h("th",{class:"r"},"Sent"),h("th",{class:"r"},"Replies"),h("th",{class:"r"},"Reply rate"))),
+          h("tbody",{},sent.map(([l,n,r])=>h("tr",{},h("td",{},l),h("td",{class:"r"},n),h("td",{class:"r"},r),h("td",{class:"r"},n?Math.round(r/n*100)+"%":"–"))))))),
+      h("section",{class:"card stack"},h("div",{},h("h2",{class:"h2"},"Roles you can apply for"),h("p",{class:"muted"},"Based on your CV. Tap a keyword to search your saved jobs, or use it with /browse-jobs.")),
+        lanes.length ? FITS.map(([fit,label])=>{ const ls = lanes.filter(l=>l.fit===fit); return ls.length>0 && h("div",{class:"stack-sm"},h("p",{class:"small muted",style:"letter-spacing:.06em;text-transform:uppercase"},label),
+            h("ul",{class:"divide"},ls.map(l=>h("li",{class:"stack-sm",style:"padding:10px 0"},h("p",{},h("span",{style:"font-weight:500"},l.lane),l.roles&&h("span",{class:"muted"}," · "+l.roles)),
+              h("div",{class:"row",style:"gap:6px"},list(l.keywords).map(k=>h("button",{class:"chip",onclick:()=>searchJobs(k)},k))))))); })
+          : empty("No role list yet. Ask Claude to add your role lanes to the profile."),
+        pr.role_skip&&h("p",{class:"small muted"},"Skip: "+pr.role_skip)));
+  },
+
+  jobs() {
+    const results = h("div",{}), selectEl = (key,label,opts)=>h("select",{class:"field","aria-label":label,onchange:e=>{filters[key]=e.target.value;fill()}},opts.map(([v,t])=>h("option",{value:v,selected:filters[key]===v},t)));
+    const sources = [...new Set(state.jobs.map(j=>j.source).filter(Boolean))].sort();
+    function fill() {
+      const q = filters.q.toLowerCase(), loc = filters.location.toLowerCase(), since = Number(filters.since);
+      const sugg = state.jobs.filter(archiveSuggestion), archived = filters.show==="archived";
+      const rows = state.jobs.filter(j=>(archived?j.hidden:!j.hidden) && (archived||!filters.suggested||(filters.reason?archiveSuggestion(j)===filters.reason:archiveSuggestion(j))) && (!filters.runs||filters.runs.includes(j.runId)) && (!q||(j.title+" "+j.company).toLowerCase().includes(q)) && (!filters.source||j.source===filters.source) && (!filters.score||(filters.score.startsWith("lt")?(j.score!=null&&j.score<Number(filters.score.slice(2))):(j.score??-1)>=Number(filters.score))) && (!loc||(j.location||"").toLowerCase().includes(loc)) && (!filters.remote||j.remote) && (!since||within(j.createdAt,since)))
+        .sort((a,b)=>(b.score??-1)-(a.score??-1)||(b.createdAt||"").localeCompare(a.createdAt||"")).slice(0,300);
+      const sel = state.jobs.find(j=>j.id===state.jobId);
+      const canPick = j => archived || !j.app;
+      for (const id of picked) if (!state.jobs.some(j=>j.id===id&&(archived?j.hidden:!j.hidden))) picked.delete(id);
+      const shown = rows.filter(canPick), allOn = shown.length>0 && shown.every(j=>picked.has(j.id)), pickedJobs = state.jobs.filter(j=>picked.has(j.id));
+      const toggle = (j,on) => { on?picked.add(j.id):picked.delete(j.id); fill(); };
+      const byReason = ARCHIVE_REASONS.map(([r,l])=>[l,sugg.filter(j=>archiveSuggestion(j)===r).length]).filter(x=>x[1]);
+      results.replaceChildren(h("div",{},
+        !archived&&sugg.length>0&&(()=>{ const group = rows.filter(j=>archiveSuggestion(j) && (!filters.suggested||!filters.reason||archiveSuggestion(j)===filters.reason));
+          const name = filters.suggested&&filters.reason ? reasonLabel(filters.reason).toLowerCase() : "poor fits";
+          const pick = (on, reason) => { filters.suggested = on; filters.reason = reason; picked.clear(); fill(); };
+          return h("section",{class:"card stack-sm",style:"margin-bottom:16px"},
+            h("div",{class:"row between"},h("p",{style:"font-weight:500"},`${sugg.length} ${sugg.length===1?"job looks":"jobs look"} like a poor fit`),
+              h("button",{class:"btn primary",onclick:async()=>{const n=group.length;await archiveJobs(group.map(j=>[j,archiveSuggestion(j)]),`Archived ${n} ${n===1?"job":"jobs"}`);picked.clear();filters.suggested=false;filters.reason="";state.jobId=null;render(true)}},
+                `Archive ${group.length} ${name}${group.length<(filters.reason&&filters.suggested?sugg.filter(j=>archiveSuggestion(j)===filters.reason).length:sugg.length)?" shown":""}`)),
+            h("div",{class:"pills",role:"group","aria-label":"Show poor fits by reason"},
+              h("button",{class:"pill","aria-pressed":String(!filters.suggested),onclick:()=>pick(false,"")},"All jobs"),
+              h("button",{class:"pill","aria-pressed":String(filters.suggested&&!filters.reason),onclick:()=>pick(true,"")},"All poor fits",h("span",{class:"n"},sugg.length)),
+              ARCHIVE_REASONS.map(([r,l])=>{ const n = sugg.filter(j=>archiveSuggestion(j)===r).length;
+                return n>0&&h("button",{class:"pill","aria-pressed":String(filters.suggested&&filters.reason===r),onclick:()=>pick(true,r)},l,h("span",{class:"n"},n)); })),
+            h("p",{class:"small muted"},filters.suggested?`Showing ${group.length} ${name}. Archive them all with the button, or tick only the ones you want and use Archive selected. Jobs in your applications are never included.`
+              :"Pick a reason to see just those jobs, check them, then archive the whole group in one click."));
+        })(),
+        pickedJobs.length>0&&h("section",{class:"card row between",style:"margin-bottom:16px;border-color:var(--line-strong)"},
+          h("p",{style:"font-weight:500"},`${pickedJobs.length} selected`),
+          archived ? h("div",{class:"row"},h("button",{class:"btn primary",onclick:async()=>{const js=[...pickedJobs];picked.clear();await restoreJobs(js,`Restored ${js.length} ${js.length===1?"job":"jobs"}`);render(true)}},"Restore selected"),
+              h("button",{class:"btn",onclick:()=>{picked.clear();fill()}},"Clear selection"))
+            : h("div",{class:"row"},h("select",{class:"field",style:"width:auto","aria-label":"Archive reason",onchange:e=>{pickReason=e.target.value}},
+                [["suggested","Use each job's suggested reason"],...ARCHIVE_REASONS].map(([v,l])=>h("option",{value:v,selected:pickReason===v},v==="suggested"?l:"Reason: "+l))),
+              h("button",{class:"btn primary",onclick:async()=>{const items=pickedJobs.map(j=>[j,pickReason==="suggested"?(archiveSuggestion(j)||"other"):pickReason]);picked.clear();state.jobId=null;await archiveJobs(items,`Archived ${items.length} ${items.length===1?"job":"jobs"}`);render(true)}},"Archive selected"),
+              h("button",{class:"btn",onclick:()=>{picked.clear();fill()}},"Clear selection"))),
+        h("div",{class:sel?"cols detail":"stack"},
+        h("div",{class:"card flush"}, rows.length ? h("table",{},h("thead",{},h("tr",{},h("th",{style:"width:44px"},shown.length>0&&h("input",{type:"checkbox","aria-label":allOn?"Untick all shown jobs":"Tick all shown jobs",checked:allOn,onchange:e=>{for(const j of shown)e.target.checked?picked.add(j.id):picked.delete(j.id);fill()}})),h("th",{class:"r"},"Score"),h("th",{},"Job"),h("th",{},"Location"),h("th",{},"Salary"),h("th",{},"Source"))),
+          h("tbody",{},rows.map(j=>h("tr",{class:j.id===state.jobId||picked.has(j.id)?"sel":""},h("td",{},canPick(j)?h("input",{type:"checkbox","aria-label":"Select "+j.title,checked:picked.has(j.id),onchange:e=>toggle(j,e.target.checked)}):h("span",{class:"small muted",title:"Already in your applications"},"–")),h("td",{class:"r",style:"font-weight:500"},j.score??"–"),
+            h("td",{},h("button",{class:"link",style:"font-weight:500",onclick:()=>{state.jobId=j.id;fill()}},j.title),h("div",{class:"muted"},j.company),
+              h("div",{class:"row",style:"margin-top:4px;gap:4px"},j.app&&h("span",{class:"badge b-good"},"In pipeline"),j.hidden&&h("span",{class:"badge b-plain"},"Archived: "+reasonLabel(j.archiveReason)),
+                !j.hidden&&archiveSuggestion(j)&&h("span",{class:"badge b-bad"},"Suggest archive: "+reasonLabel(archiveSuggestion(j))),list(j.flags).map(f=>h("span",{class:"badge b-warn"},FLAGS[f]||f)))),
+            h("td",{style:"min-width:140px"},shortLoc(j.location)," ",j.remote&&h("span",{class:"badge b-plain"},"Remote")),h("td",{},j.salaryText||"–"),h("td",{class:"muted"},j.source)))))
+          : h("p",{class:"pad muted"},archived?"No archived jobs.":["No jobs here. In Claude Code, run ",h("kbd",{},"/browse-jobs full stack developer Dubai"),", or loosen the filters."])),
+        sel && jobPanel(sel))));
+    }
+    fill();
+    const all = state.jobs, hidden = all.filter(j=>j.hidden).length, link = (label, go) => h("button",{class:"link",style:"text-decoration:underline;text-underline-offset:3px",onclick:go},label);
+    const reset = () => { resetJobFilters(); render(true); };
+    return h("div",{class:"stack"},
+      h("p",{class:"muted"},link(`${all.length} jobs saved`,reset)," from ",link(`${new Set(state.runs.map(r=>r.source+"|"+(r.query||""))).size} searches`,()=>open("runs"))," · ",
+        `${all.filter(j=>j.score!=null).length} scored · `,link(`${all.filter(j=>j.app).length} in your applications`,()=>open("pipeline"))," · ",
+        link(`${hidden} archived`,()=>{filters.show="archived";render(true)}),
+        filters.runs&&h("span",{}," · ",h("span",{class:"badge b-plain"},"Search: "+filters.runLabel)," ",link("Clear",()=>{filters.runs=null;filters.runLabel="";render(true)}))),
+      h("div",{class:"row filters"},
+        h("input",{class:"field",placeholder:"Title or company","aria-label":"Title or company",value:filters.q,oninput:e=>{filters.q=e.target.value;fill()}}),
+        selectEl("source","Source",[["","All sources"],...sources.map(s=>[s,s])]),
+        selectEl("score","Score",[["","Any score"],["85","85 or higher"],["70","70 or higher"],["50","50 or higher"],["lt50","Under 50"],["lt30","Under 30"],["lt10","Under 10"]]),
+        h("input",{class:"field",placeholder:"Location","aria-label":"Location",value:filters.location,oninput:e=>{filters.location=e.target.value;fill()}}),
+        selectEl("show","Show",[["active","Active jobs"],["archived",`Archived (${state.jobs.filter(j=>j.hidden).length})`]]),
+        selectEl("since","Date found",[["","Any date"],["1","Last 24 hours"],["7","Last 7 days"],["30","Last 30 days"]]),
+        h("label",{class:"row",style:"gap:6px"},h("input",{type:"checkbox",checked:filters.remote,onchange:e=>{filters.remote=e.target.checked;fill()}}),"Remote")),
+      results);
+  },
+
+  /* The board groups Saved, Preparing and Ready into one To apply column, and keeps Rejected behind the Closed filter.
+     Cards move by dragging, or with the ⋯ menu on touch screens. */
+  pipeline() {
+    const apps = state.jobs.filter(j=>j.app), results = h("div",{});
+    const groups = { open:j=>j.app.status!=="rejected", needs:needsYou, closed:j=>j.app.status==="rejected", all:()=>true };
+    const cols = BOARD_COLS.filter(c=>pipe.filter==="all" || (pipe.filter==="closed" ? c[0]==="closed" : c[0]!=="closed"));
+    const stageLabel = st => STATUSES.find(x=>x[0]===st)?.[1]||st;
+    const moveMenu = c => h("select",{class:"more","aria-label":"Move "+c.title+" to another stage",title:"Move or remove",
+      onchange:e=>{ const v = e.target.value; e.target.value = ""; e.target.blur(); if (v==="_remove") { removeFor = c.id; open("application",{appId:c.id}); } else if (v) setStatus(c,v); }},
+      h("option",{value:""},"⋯"),h("optgroup",{label:"Move to"},STATUSES.filter(([st])=>st!==c.app.status).map(([st,l])=>h("option",{value:st},l))),h("option",{value:"_remove"},"Remove…"));
+    const tile = c => { const a = c.app, since = stageSince(c);
+      return h("article",{class:"tile",draggable:true,ondragstart:e=>e.dataTransfer.setData("text/plain",c.id)},
+        h("div",{class:"row between",style:"flex-wrap:nowrap;gap:6px"},h("span",{class:"small muted clip"},c.company||"Company"),moveMenu(c)),
+        h("button",{class:"link tname",onclick:()=>open("application",{appId:c.id})},c.title),
+        (c.location||c.remote)&&h("p",{class:"small muted clip"},[shortLoc(c.location),c.remote&&!/remote/i.test(c.location||"")&&"Remote"].filter(Boolean).join(" · ")),
+        (PRE.includes(a.status)||needsYou(c)||interviewAhead(c))&&h("div",{class:"row",style:"gap:4px"},PRE.includes(a.status)&&h("span",{class:"badge b-plain"},stageLabel(a.status)),
+          deadlineChip(c),interviewChip(c),needsYou(c)&&h("span",{class:"badge b-warn"},a.status==="ready"?"Needs a resume":"Follow-up due")),
+        h("div",{class:"row between tfoot"},h("span",{class:"small muted"},c.score!=null?c.score+"/100 match":"Not scored"),h("span",{class:"small muted"},since?ago(since):""))); };
+    const ready = v => v ? h("span",{class:"ok"},"Ready") : h("span",{class:"muted"},"Not yet");
+    function fill() {
+      const q = pipe.q.trim().toLowerCase();
+      const rows = apps.filter(j=>groups[pipe.filter](j) && (!q||(j.title+" "+(j.company||"")).toLowerCase().includes(q))).sort((a,b)=>(stageSince(b)||"").localeCompare(stageSince(a)||""));
+      if (!rows.length && pipe.view==="table") return results.replaceChildren(h("p",{class:"card muted"},apps.length?"Nothing here. Try another filter.":"No applications yet. Open a job on Browse jobs and choose Start application."));
+      results.replaceChildren(pipe.view==="table"
+        ? h("div",{class:"card flush"},h("table",{class:"apps"},
+            h("thead",{},h("tr",{},["Position","Stage","Resume","Cover letter"].map(x=>h("th",{},x)),h("th",{class:"r"},"Match"),h("th",{class:"r"},"Applied"))),
+            h("tbody",{},rows.map(j=>h("tr",{onclick:()=>open("application",{appId:j.id})},
+              h("td",{},h("div",{class:"pos"},h("span",{class:"avatar "+tint(j.company)},initial(j.company)),h("div",{style:"min-width:0"},h("button",{class:"link",style:"font-weight:500",onclick:e=>{e.stopPropagation();open("application",{appId:j.id})}},j.title),h("div",{class:"muted"},j.company||"Company")))),
+              h("td",{},h("span",{class:"status s-"+(needsYou(j)?"bad":STATUS_TONE[j.app.status]||"plain")},needsYou(j)?"Needs you":stageLabel(j.app.status))),
+              h("td",{},ready(j.app.resume)),h("td",{},ready(j.app.coverLetter)),h("td",{class:"r"},j.score??"–"),
+              h("td",{class:"r muted",style:"white-space:nowrap"},isApplied(j)?ago(j.app.appliedAt):"–"))))))
+        : h("div",{class:"board",id:"board"},cols.map(([key,label,statuses])=>{ const col = rows.filter(c=>statuses.includes(c.app.status));
+            return h("section",{class:"col","data-column":key,"aria-label":label,
+              ondragover:e=>{e.preventDefault();e.currentTarget.classList.add("over")},ondragleave:e=>e.currentTarget.classList.remove("over"),
+              ondrop:e=>{ e.preventDefault(); e.currentTarget.classList.remove("over"); const j = state.jobs.find(x=>x.id===e.dataTransfer.getData("text/plain"));
+                if (j && j.app && !statuses.includes(j.app.status)) setStatus(j, key==="todo" ? (j.app.resume?"ready":"saved") : statuses[0]); }},
+              h("h2",{},h("span",{class:"dot",style:`background:var(--st-${key})`}),label,h("span",{class:"n"},col.length)),
+              col.map(tile)); })));
+    }
+    fill();
+    const waiting = apps.filter(j=>j.app.status==="applied").length, talking = apps.filter(j=>["screening","interview"].includes(j.app.status)).length;
+    const seg = (key, opts, label) => h("div",{class:"pills",role:"group","aria-label":label},opts.map(([v,l,n])=>h("button",{class:"pill","aria-pressed":String(pipe[key]===v),onclick:()=>{pipe[key]=v;if(key==="view"){try{localStorage.setItem("jh.view",v)}catch{}}render(true)}},l,n!=null&&h("span",{class:"n"},n))));
+    return h("div",{class:"stack"},
+      h("p",{class:"muted"},apps.length ? `${apps.length} ${apps.length===1?"application":"applications"}: ${waiting} waiting to hear back, ${talking} in screening or interviews.` : "No applications yet. Open a job on Browse jobs and choose Start application."),
+      h("div",{class:"row between"},
+        h("div",{class:"row"},h("input",{class:"field",style:"width:auto;flex:1 1 200px;max-width:280px",type:"search",placeholder:"Search company or role","aria-label":"Search company or role",value:pipe.q,oninput:e=>{pipe.q=e.target.value;fill()}}),
+          seg("filter",[["open","In progress",apps.filter(groups.open).length],["needs","Needs you",apps.filter(needsYou).length],["closed","Closed",apps.filter(groups.closed).length],["all","All",apps.length]],"Filter applications")),
+        h("div",{class:"row"},pipe.view==="board"&&h("span",{class:"small muted"},"Drag a card, or use ⋯, to change its stage"),seg("view",[["board","Board"],["table","Table"]],"View"))),
+      results);
+  },
+
+  /* One application: a header with its stage, then tabs. The resume and cover letter show as the real PDF pages in the
+     chosen design; Edit text switches to the plain text behind them. */
+  application() {
+    const j = state.jobs.find(x=>x.id===state.appId);
+    if (!j||!j.app) return h("div",{class:"stack"},empty("This application is no longer here."),h("div",{},h("button",{class:"btn",onclick:()=>open("pipeline")},"Back to Applications")));
+    const a = j.app, k = "app."+j.id+".", msgs = state.outreach.filter(m=>m.jobId===j.id), hist = historyOf(a);
+    if (appView.id!==j.id) appView = {id:j.id, tab:(a.resume||a.coverLetter)?"resume":"posting", edit:null};
+    const cmd = "/prepare-application "+j.id;
+    const refine = h("aside",{class:"stack sticky"},
+      h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Refine with Claude"),
+        h("p",{class:"muted"},"Ask for changes in Claude Code, for example “make the summary shorter”. It only uses facts from your profile, so nothing is invented."),
+        h("div",{class:"row"},h("kbd",{style:"overflow-wrap:anywhere;white-space:normal"},cmd),copyBtn(cmd,"Copy"))),
+      a.cvFile&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Word CV"),h("p",{class:"code",style:"overflow-wrap:anywhere"},String(a.cvFile).split("/").pop()),h("div",{},copyBtn(a.cvFile,"Copy file path"))));
+    /* Each save or restore keeps the text it replaces under app.versions, newest five per document, so an earlier
+       resume or cover letter can be read again or put back. */
+    const docPane = (key, label, kind) => {
+      const editing = appView.edit===key || drafts[k+key]!==undefined, has = String(a[key]||"").trim(), vers = versionsOf(a,key);
+      const stamp = at => new Date(at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+      if (editing) return h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Edit the "+label.toLowerCase()),h("p",{class:"small muted"},"Plain text. Lines starting with # or ## are headings and lines starting with - are bullets."),
+        field(k+key,a[key],{rows:24,cls:"code",placeholder:label}),
+        h("div",{class:"row"},h("button",{class:"btn primary",onclick:async()=>{ const next = take(k+key,a[key]||"");
+            await updateJob(j.id,{app:{[key]:next, ...(next!==(a[key]||"")&&has?{versions:keepVersion(a,key,"v"+Date.now())}:{})}},label+" saved"); delete drafts[k+key]; appView.edit = null; render(true); }},"Save"),
+          h("button",{class:"btn",onclick:()=>{delete drafts[k+key];appView.edit=null;render(true)}},"Cancel")));
+      if (!has) return h("section",{class:"card stack-sm"},h("p",{class:"muted"},"No "+label.toLowerCase()+" yet. In Claude Code, run ",h("kbd",{},cmd),"."),
+        h("div",{},h("button",{class:"btn",onclick:()=>{appView.edit=key;render(true)}},"Write it yourself")));
+      const tpl = cvTemplate(a.template||state.profile.cv_template||"navy"), text = kind==="resume" ? a.resume : coverMd(a.resume||"",a.coverLetter,j), mark = kind==="resume" ? "CURRICULUM VITAE" : "COVER LETTER";
+      const pages = h("div",{class:"cvpages"}), note = h("span",{});
+      const show = sh => { note.textContent = " · "+(sh.count===1?"1 page":sh.count+" pages"); pages.replaceChildren(...sh.urls.map((u,n)=>h("img",{class:"cvpage",src:u,alt:`Page ${n+1} of your ${label.toLowerCase()}`}))); };
+      const plain = () => pages.replaceChildren(h("div",{class:"paper prose"},a[key]));
+      const hit = cvShots.get(shotKey(text,mark,tpl.id,640,true));
+      if (hit) show(hit); else if (!window.jspdf) plain();
+      else { pages.append(h("p",{class:"muted"},"Drawing the preview…")); queueShots([async()=>show(await cvShot(text,mark,tpl.id,640,true))], plain); }
+      const restore = v => { const vid = "v"+Date.now(), cur = a[key]||""; appView.hist = null; appView.peek = null;
+        return write(()=>db.doc("jobs/"+j.id).update({app:{[key]:v.text, versions:keepVersion(a,key,vid)}}), "Restored the version from "+stamp(v.at),
+          ()=>updateJob(j.id,{app:{[key]:cur, versions:{[vid]:null}}},"Undone")); };
+      return h("section",{class:"stack-sm"},
+        h("div",{class:"row between"},h("p",{class:"small muted"},tpl.name+" design",note),
+          h("div",{class:"row"},vers.length>0&&h("button",{class:"btn","aria-expanded":String(appView.hist===key),onclick:()=>{appView.hist=appView.hist===key?null:key;appView.peek=null;render(true)}},"History · "+vers.length),
+            h("button",{class:"btn",onclick:()=>{appView.edit=key;render(true)}},"Edit text"),
+            h("button",{class:"btn primary",onclick:()=>open("cvdesign",{appId:j.id,cvKind:kind,cvPick:null})},"Designs and download"))),
+        appView.hist===key&&vers.length>0&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Earlier versions"),
+          h("p",{class:"small muted"},`The last ${KEEP_VERSIONS} are kept. Restoring one keeps the current text as a version too.`),
+          h("ul",{class:"divide"},vers.map(v=>h("li",{class:"stack-sm",style:"padding:10px 0"},
+            h("div",{class:"row between"},h("span",{},stamp(v.at),h("span",{class:"small muted"}," · "+v.text.trim().split(/\s+/).length+" words")),
+              h("div",{class:"row"},h("button",{class:"btn","aria-expanded":String(appView.peek===v.id),onclick:()=>{appView.peek=appView.peek===v.id?null:v.id;render(true)}},appView.peek===v.id?"Hide":"View"),
+                h("button",{class:"btn",onclick:()=>restore(v)},"Restore"))),
+            appView.peek===v.id&&h("div",{class:"prose code scroll",style:"border-radius:10px;background:var(--inset);padding:12px"},v.text))))),
+        h("div",{class:"desk"},pages));
+    };
+    const panes = {
+      resume:()=>h("div",{class:"cols detail"},docPane("resume","Resume","resume"),refine),
+      cover:()=>h("div",{class:"cols detail"},docPane("coverLetter","Cover letter","cover"),refine),
+      email:()=>{ const em = a.email||{}, ek = k+"email.";
+        if (!a.email && appView.edit!=="email" && !Object.keys(drafts).some(x=>x.startsWith(ek))) return h("div",{class:"stack narrow"},h("section",{class:"card stack-sm"},
+          h("p",{class:"muted"},"No email yet. If this job is applied to by email, run ",h("kbd",{},cmd)," in Claude Code and it drafts one. Jobs with an apply link don't need it."),
+          h("div",{},h("button",{class:"btn",onclick:()=>{appView.edit="email";render(true)}},"Write it yourself"))));
+        const to = String(take(ek+"to",em.to||"")).trim(), subject = take(ek+"subject",em.subject||""), body = take(ek+"body",em.body||"");
+        const mail = EMAIL_RE.test(to) ? `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` : "";
+        const save = async()=>{ const t = String(take(ek+"to",em.to||"")).trim(); if (t && !EMAIL_RE.test(t)) return toast("That email address doesn't look right.");
+          await updateJob(j.id,{app:{email:{to:t,subject:take(ek+"subject",em.subject||""),body:take(ek+"body",em.body||"")}}},"Email saved"); clearDrafts(ek); appView.edit = null; render(true); };
+        return h("div",{class:"cols detail"},
+          h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Email to send with your application"),
+            h("p",{class:"small muted"},"Click into the text to change it, then Save changes."),
+            field(ek+"to",em.to,{type:"email",label:"To"}),field(ek+"subject",em.subject,{label:"Subject"}),field(ek+"body",em.body,{rows:12,label:"Message"}),
+            h("div",{class:"row"},h("button",{class:"btn primary",onclick:save},"Save changes"),h("button",{class:"btn",onclick:()=>{clearDrafts(ek);appView.edit=null;render(true)}},"Discard changes"))),
+          h("aside",{class:"stack sticky"},h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Send it"),
+            h("p",{class:"muted"},"Send it from your own email and attach the resume and cover letter PDFs. Then click Mark applied."),
+            !to&&h("p",{class:"small",style:"color:var(--warn)"},"No address yet. Add the one the listing gives under To."),
+            h("div",{class:"row"},copyBtn(body,"Copy message"),copyBtn(subject,"Copy subject"),to&&copyBtn(to,"Copy address"),mail&&h("a",{class:"btn",href:mail},"Open in email app")),
+            h("div",{},h("button",{class:"btn",onclick:()=>open("cvdesign",{appId:j.id,cvKind:"resume",cvPick:null})},"Get the PDFs"))))); },
+      posting:()=>{ const reqs = list(j.requirements).filter(r=>r&&r.text), met = reqs.filter(r=>r.met).length;
+        return h("div",{class:"cols detail"},
+          h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"h2"},"Job posting"),extLink(j.applyUrl,"Open the listing","link muted")),h("div",{class:"prose"},j.description||"No description was saved for this job.")),
+          h("aside",{class:"stack sticky"},h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"h2"},"How you match"),
+              h("span",{class:"muted"},[reqs.length>0&&`${met} of ${reqs.length} covered`,j.score!=null&&j.score+"/100"].filter(Boolean).join(" · "))),
+            j.score==null&&!reqs.length ? empty("Not scored yet. In Claude Code, run ",h("kbd",{},"/score-jobs"),".")
+              : [reqs.length ? h("ul",{class:"fit divide"},reqs.map(r=>h("li",{},h("span",{class:r.met?"tick":"gap","aria-hidden":"true"},r.met?"✓":"–"),
+                    h("span",{},h("span",{},r.text),h("span",{class:"small muted",style:"display:block"},r.met?(r.evidence||"In your profile"):"Not in your profile yet")))))
+                  : h("ul",{class:"fit divide"},list(j.reasons).map(r=>h("li",{},h("span",{class:"tick","aria-hidden":"true"},"✓"),h("span",{},r))),
+                      list(j.missing).map(r=>h("li",{},h("span",{class:"gap","aria-hidden":"true"},"–"),h("span",{},h("span",{class:"small muted"},"Gap: "),r)))),
+                list(j.flags).length>0&&h("div",{class:"row",style:"gap:4px"},list(j.flags).map(f=>h("span",{class:"badge b-warn"},FLAGS[f]||f))),
+                h("p",{class:"small muted"},"Gaps aren't deal-breakers. Your documents only use facts from your profile, so a gap is never filled with something made up."),
+                !reqs.length&&j.score!=null&&h("p",{class:"small muted"},"For a requirement-by-requirement list, run ",h("kbd",{},cmd)," in Claude Code.")]))); },
+      messages:()=>h("div",{class:"stack narrow"},
+        h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Messages for this job"),
+          msgs.length ? h("ul",{class:"divide"},msgs.map(m=>h("li",{class:"row between",style:"padding:10px 0"},h("button",{class:"link",style:"font-weight:500",onclick:()=>open("message",{msgId:m.id})},[contactOf(m)?.name||"Contact",CHANNELS[m.channel]].filter(Boolean).join(" · ")),
+              h("span",{class:"row",style:"gap:6px"},h("span",{class:"badge b-plain"},OUT_TYPES.find(x=>x[0]===typeOf(m))?.[1]),h("span",{class:"status s-"+OUT_TONE[m.status]},OUT_LABELS[m.status])))))
+            : empty("None yet. In Claude Code, run ",h("kbd",{},"/find-hiring-contact "+j.id),", then ",h("kbd",{},"/draft-outreach "+(j.company||"<company>")+" "+j.id),"."),
+          msgs.length>0&&h("div",{},h("button",{class:"btn",onclick:()=>{outFilters.tab="all";outFilters.type="";open("outreach")}},"Open Outreach"))),
+        a.followUpDraft&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Follow-up message"),h("p",{class:"small muted"},"Send this once if you haven't heard back by the follow-up date."),h("p",{class:"prose"},a.followUpDraft),h("div",{},copyBtn(a.followUpDraft)))),
+      notes:()=>h("div",{class:"stack narrow"},
+        h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Dates"),h("p",{class:"small muted"},"These show on the board, the calendar and Worth a look."),
+          h("div",{class:"grid3"},field(k+"deadline",j.deadline?dayOf(j.deadline):"",{type:"date",label:"Apply by"}),field(k+"followUp",a.followUp,{type:"date",label:"Follow up on"}),field(k+"interviewAt",a.interviewAt,{type:"datetime-local",label:"Interview date and time"})),
+          field(k+"interviewNote",a.interviewNote,{label:"Interview details",placeholder:"Where it is, the call link, who you'll meet"}),
+          h("div",{},h("button",{class:"btn",onclick:async()=>{ const v = (key,old)=>take(k+key,old||"")||null;
+            await updateJob(j.id,{deadline:v("deadline",j.deadline?dayOf(j.deadline):""),app:{followUp:v("followUp",a.followUp),interviewAt:v("interviewAt",a.interviewAt),interviewNote:v("interviewNote",a.interviewNote)}},"Dates saved");
+            for (const key of ["deadline","followUp","interviewAt","interviewNote"]) delete drafts[k+key]; render(true); }},"Save dates"))),
+        h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Notes"),field(k+"notes",a.notes,{rows:6,placeholder:"Notes"}),
+          h("div",{},h("button",{class:"btn",onclick:async()=>{await updateJob(j.id,{app:{notes:take(k+"notes",a.notes||"")}},"Notes saved");delete drafts[k+"notes"]}},"Save notes"))),
+        h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"History"),
+          h("ul",{class:"stack-sm"},a.createdAt&&h("li",{class:"row between"},h("span",{},"Started"),h("span",{class:"muted"},a.createdAt.slice(0,10))),
+            hist.length ? hist.map(e=>h("li",{class:"row between"},h("span",{},STATUSES.find(x=>x[0]===e.s)?.[1]||e.s),h("span",{class:"muted"},String(e.at).slice(0,10))))
+              : isApplied(j)&&h("li",{class:"row between"},h("span",{},"Applied"),h("span",{class:"muted"},a.appliedAt.slice(0,10)))))),
+    };
+    const tabs = [["resume","Resume"],["cover","Cover letter"],["email","Email"],["posting","Job posting"+(j.score!=null?" · "+j.score+"/100":"")],["messages","Messages"+(msgs.length?" · "+msgs.length:"")],["notes","Notes and dates"]];
+    return h("div",{class:"stack wide"},
+      h("div",{class:"row between",style:"align-items:flex-start;gap:16px"},
+        h("div",{style:"min-width:0"},h("button",{class:"link muted",onclick:()=>open("pipeline")},"Applications /"),h("h2",{class:"title"},j.title+(j.company?" · "+j.company:"")),
+          h("p",{class:"muted"},[shortLoc(j.location),j.remote&&!/remote/i.test(j.location||"")&&"Remote",j.salaryText,deadlineOpen(j)&&"Apply by "+niceDay(j.deadline),interviewText(a),isApplied(j)&&"Applied "+a.appliedAt.slice(0,10),a.createdAt&&"Started "+a.createdAt.slice(0,10)].filter(Boolean).join("  ·  "))),
+        h("div",{class:"row"},
+          h("select",{class:"field",style:"width:auto","aria-label":"Stage",onchange:e=>{e.target.blur();setStatus(j,e.target.value)}},STATUSES.map(([st,l])=>h("option",{value:st,selected:st===a.status},l))),
+          !isApplied(j)&&a.status!=="rejected"&&h("button",{class:"btn",onclick:()=>setStatus(j,"applied")},"Mark applied"),
+          extLink(j.applyUrl,"Open apply link",isApplied(j)?"btn":"btn primary"),
+          h("button",{class:"btn","aria-expanded":String(removeFor===j.id),onclick:()=>{removeFor=removeFor===j.id?null:j.id;render(true)}},"Remove"))),
+      removeFor===j.id&&h("section",{class:"card stack-sm"},
+        h("p",{class:"muted"},"This also removes its resume, cover letter and notes. Undo in the message that appears brings them back. Messages for this job stay in Outreach."),
+        h("div",{class:"row"},h("button",{class:"btn",onclick:()=>removeApp(j)},"Remove, keep on Browse jobs"),h("button",{class:"btn",onclick:()=>{removeFor=null;render(true)}},"Cancel")),
+        h("p",{class:"small muted"},"Or remove and archive it, because:"),
+        h("div",{class:"row",style:"gap:6px"},ARCHIVE_REASONS.map(([r,l])=>h("button",{class:"chip",onclick:()=>removeApp(j,r)},l)))),
+      h("div",{class:"tabs",role:"tablist","aria-label":"Application sections"},tabs.map(([v,l])=>h("button",{class:"tab",role:"tab","aria-selected":String(appView.tab===v),onclick:()=>{appView.tab=v;render(true)}},l))),
+      panes[appView.tab]());
+  },
+
+  /* Before a PDF downloads, all twelve designs show as page-1 thumbnails of this job's own CV, and the chosen one
+     shows in full. A design can be saved for this job or as the default for every application. */
+  cvdesign() {
+    const j = state.jobs.find(x=>x.id===state.appId);
+    if (!j||!j.app) return h("div",{class:"stack"},empty("This application is no longer here."),h("div",{},h("button",{class:"btn",onclick:()=>open("pipeline")},"Back to Applications")));
+    const a = j.app, k = "app."+j.id+".", resume = take(k+"resume",a.resume||""), letter = take(k+"coverLetter",a.coverLetter||"");
+    const back = h("div",{},h("button",{class:"link muted",onclick:()=>open("application",{appId:j.id})},"Application"),h("h2",{class:"title"},"Choose a design"),
+      h("p",{class:"muted"},[j.title,j.company].filter(Boolean).join(" · ")));
+    if (!resume.trim()) return h("div",{class:"stack wide"},back,h("p",{class:"card muted"},"No resume yet. In Claude Code, run ",h("kbd",{},"/prepare-application "+j.id),"."));
+    const kind = state.cvKind==="cover" && letter.trim() ? "cover" : "resume", doc = kind==="resume" ? "CV" : "cover letter";
+    const md = kind==="resume" ? resume : coverMd(resume, letter, j), label = kind==="resume" ? "CURRICULUM VITAE" : "COVER LETTER";
+    const def = state.profile.cv_template || "navy", pick = cvTemplate(state.cvPick || a.template || def), jobs = [];
+    const failed = h("p",{class:"small",style:"color:var(--warn)",hidden:true},"The preview couldn't load. Check your connection and reload. You can still download the PDF.");
+    const pageNote = h("span",{}), pages = h("div",{class:"cvpages"});
+    const showBig = s => { pageNote.textContent = s.count===1 ? "1 page" : s.count+" pages";
+      pages.replaceChildren(...s.urls.map((u,n)=>h("img",{class:"cvpage",src:u,alt:`Page ${n+1} of your ${doc} in the ${pick.name} design`}))); };
+    const big = cvShots.get(shotKey(md,label,pick.id,640,true));
+    if (big) showBig(big); else { pages.append(h("p",{class:"muted"},"Drawing the preview…")); jobs.push(async()=>showBig(await cvShot(md,label,pick.id,640,true))); }
+    const cards = CV_TEMPLATES.map(tp=>{
+      const img = h("img",{alt:""}), count = h("span",{class:"small muted"}), hit = cvShots.get(shotKey(md,label,tp.id,240,false));
+      const fill = s => { img.src = s.urls[0]; count.textContent = s.count===1 ? "1 page" : s.count+" pages"; };
+      if (hit) fill(hit); else jobs.push(async()=>fill(await cvShot(md,label,tp.id,240,false)));
+      return h("button",{class:"cvcard","aria-pressed":String(tp.id===pick.id),"aria-label":tp.name+" design",onclick:()=>{state.cvPick=tp.id;render(true)}},
+        h("span",{class:"cvpaper"},img),
+        h("span",{class:"row between",style:"gap:6px;flex-wrap:nowrap"},h("span",{style:"font-weight:500"},tp.name),count),
+        h("span",{class:"small muted"},tp.note),
+        (tp.id===def||tp.id===a.template||tp.ats===false)&&h("span",{class:"row",style:"gap:4px"},tp.id===def&&h("span",{class:"badge b-plain"},"Default"),
+          tp.id===a.template&&h("span",{class:"badge b-good"},"This job"),tp.ats===false&&h("span",{class:"badge b-warn"},"Less ATS-friendly")));
+    });
+    queueShots(jobs, ()=>{ failed.hidden = false; });
+    const both = async()=>{ if (await exportPdf(j,"resume",resume,letter,pick.id)) await exportPdf(j,"cover",resume,letter,pick.id); };
+    const checks = kind==="resume" ? bulletCheck(resume) : [];
+    return h("div",{class:"stack wide"},back,
+      h("div",{class:"row between"},
+        h("div",{class:"pills",role:"group","aria-label":"Document"},[["resume","CV"],["cover","Cover letter"]].map(([v,l])=>
+          h("button",{class:"pill","aria-pressed":String(kind===v),disabled:v==="cover"&&!letter.trim(),onclick:()=>{state.cvKind=v;render(true)}},l))),
+        h("p",{class:"small muted"},"Tap a design to see it in full. The preview is the exact PDF you'll download.")),
+      failed,
+      h("div",{class:"cvgrid"},cards),
+      h("section",{class:"card stack"},
+        h("div",{class:"row between"},h("div",{},h("h2",{class:"h2"},pick.name),h("p",{class:"small muted"},pick.note," · ",pageNote)),
+          h("div",{class:"row"},
+            h("button",{class:"btn primary",onclick:()=>exportPdf(j,kind,resume,letter,pick.id)},"Download "+doc),
+            letter.trim()&&h("button",{class:"btn",onclick:both},"Download CV and cover letter"),
+            a.template!==pick.id&&h("button",{class:"btn",onclick:()=>updateJob(j.id,{app:{template:pick.id}},pick.name+" saved for this job")},"Use for this job"),
+            def!==pick.id&&h("button",{class:"btn",onclick:()=>write(()=>db.doc("settings/profile").update({cv_template:pick.id}),pick.name+" is now your default")},"Make it my default"))),
+        pick.ats===false&&h("p",{class:"small",style:"color:var(--warn)"},"Some applicant tracking systems read two columns out of order. Use a one-column design for online application forms."),
+        pages),
+      checks.length>0&&h("section",{class:"card stack-sm"},
+        h("h2",{class:"h2"},"Bullet check"),
+        h("p",{class:"muted"},`${checks.filter(b=>b.verb).length} of ${checks.length} experience bullets start with an action verb, and ${checks.filter(b=>b.number).length} have a number. Numbers must be real. If you know one, add it to your profile's resume text and run `,
+          h("kbd",{},"/prepare-application "+j.id)," again. Don't guess."),
+        h("div",{class:"row",style:"gap:6px"},h("span",{class:"hl hl-verb"},"Action verb"),h("span",{class:"hl hl-tool"},"Tool or skill"),h("span",{class:"hl hl-num"},"Number")),
+        h("ul",{class:"divide"},checks.map(b=>h("li",{class:"stack-sm",style:"padding:10px 0"},
+          h("p",{},b.parts.map(p=>p.k?h("span",{class:"hl hl-"+p.k},p.t):p.t)),
+          (!b.verb||!b.number)&&h("p",{class:"small muted"},[!b.verb&&"Start with an action verb.",!b.number&&"No number yet."].filter(Boolean).join(" ")))))));
+  },
+
+  outreach() {
+    const byType = m => !outFilters.type||typeOf(m)===outFilters.type;
+    const rows = state.outreach.filter(m=>byType(m)&&OUT_TAB_TEST[outFilters.tab](m))
+      .sort((a,b)=>(outFilters.tab==="due"?(a.followUpDate||"").localeCompare(b.followUpDate||""):(b.sentAt||b.createdAt||"").localeCompare(a.sentAt||a.createdAt||"")));
+    const counts = Object.fromEntries(OUT_TYPES.map(([t])=>[t,state.outreach.filter(m=>typeOf(m)===t&&OUT_TAB_TEST[outFilters.tab](m)).length]));
+    const idle = idleContacts();
+    return h("div",{class:"stack wide"},
+      h("p",{class:"muted"},"Claude drafts each message. Open one to read or change it, send it yourself, then mark it sent. ",h("button",{class:"link",style:"text-decoration:underline",onclick:()=>open("strategy")},"See today's plan")),
+      h("div",{class:"row between"},
+        h("div",{class:"pills",role:"group","aria-label":"Filter messages"},OUT_TABS.map(([k,l])=>h("button",{class:"pill","aria-pressed":String(outFilters.tab===k),onclick:()=>{outFilters.tab=k;render(true)}},l,h("span",{class:"n"},state.outreach.filter(m=>byType(m)&&OUT_TAB_TEST[k](m)).length)))),
+        h("select",{class:"field","aria-label":"Message type",style:"width:auto",onchange:e=>{outFilters.type=e.target.value;render(true)}},
+          [["","All types"],...OUT_TYPES.map(([t,l])=>[t,`${l} (${counts[t]})`])].map(([v,l])=>h("option",{value:v,selected:outFilters.type===v},l)))),
+      !state.companies.length&&h("p",{class:"card muted"},"No contacts yet. In Claude Code, run ",h("kbd",{},"/add-network"),", ",h("kbd",{},"/find-recruiters")," or ",h("kbd",{},"/find-companies software Dubai"),"."),
+      idle.length>0&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},`${idle.length} contact${idle.length===1?"":"s"} found, no message yet`),
+        h("p",{class:"small muted"},"Run the command in Claude Code to draft a message for each one, or click Not needed."),
+        h("ul",{class:"divide"},idle.map(({co,ct})=>{ const jid = String(ct.source||co.source||"").match(/^job (\w+)/)?.[1], cmd = "/draft-outreach "+co.name+(jid?" "+jid:"");
+          return h("li",{class:"row between",style:"padding:10px 0"},
+            h("span",{},h("span",{style:"font-weight:500"},ct.name||"General contact")," · ",co.name," ",ct.kind&&h("span",{class:"badge b-plain"},KINDS[ct.kind]||ct.kind)),
+            h("div",{class:"row",style:"gap:6px"},h("kbd",{style:"overflow-wrap:anywhere"},cmd),copyBtn(cmd,"Copy"),h("button",{class:"btn small",onclick:()=>skipContact(co,ct)},"Not needed"))); }))),
+      state.outreach.length>0&&!rows.length&&h("p",{class:"card muted"},{draft:"Nothing waiting to send.",waiting:"No sent messages waiting for a reply.",due:"No follow-ups due today.",replied:"No replies logged yet.",closed:"Nothing closed yet.",all:"No messages of this type yet."}[outFilters.tab]),
+      rows.length>0&&h("div",{class:"olist"},rows.map(m=>{ const co = state.companies.find(c=>c.id===m.companyId), ct = contactOf(m)||{}, job = m.jobId&&state.jobs.find(j=>j.id===m.jobId);
+        return h("div",{class:"ocard",role:"link",tabindex:"0","aria-label":"Open message to "+(ct.name||"contact"),onclick:()=>open("message",{msgId:m.id}),onkeydown:e=>{if(e.key==="Enter"&&e.target===e.currentTarget)open("message",{msgId:m.id})}},
+          h("div",{class:"row between",style:"flex-wrap:nowrap"},h("div",{class:"row",style:"flex-wrap:nowrap;min-width:0"},h("span",{class:"avatar "+tint(co?.name)},initial(ct.name||co?.name)),
+            h("div",{style:"min-width:0"},h("div",{class:"clip",style:"font-weight:500"},ct.name||"Contact"),h("div",{class:"clip muted"},co?.name||"Company"))),
+            h("span",{class:"status s-"+OUT_TONE[m.status]},OUT_TAB_TEST.due(m)?"Follow-up due":OUT_LABELS[m.status])),
+          h("p",{class:"muted clamp"},m.subject?m.subject+" · ":"",m.draft||""),
+          h("div",{class:"row",style:"gap:6px"},h("span",{class:"badge b-plain"},OUT_TYPES.find(x=>x[0]===typeOf(m))?.[1]||typeOf(m)),h("span",{class:"badge b-plain"},CHANNELS[m.channel]||m.channel),
+            job&&h("span",{class:"small muted clip",style:"max-width:100%"},"For: "+job.title),
+            OUT_LIVE.includes(m.status)&&m.followUpDate&&h("span",{class:"small muted"},(m.status==="requested"?"Check back ":"Follow up ")+m.followUpDate)),
+          OUT_LIVE.includes(m.status)&&h("div",{},h("button",{class:"btn small",onclick:e=>{e.stopPropagation();setOutreach(m,"draft")}},"Unsend")),
+          m.status==="draft"&&h("div",{},h("button",{class:"btn small",onclick:e=>{e.stopPropagation();setOutreach(m,"not_needed")}},"Not needed"))); })));
+  },
+
+  message() {
+    const m = state.outreach.find(x=>x.id===state.msgId);
+    if (!m) return h("div",{class:"stack"},empty("This message is no longer here."),h("div",{},h("button",{class:"btn",onclick:()=>open("outreach")},"Back to Outreach")));
+    const co = state.companies.find(c=>c.id===m.companyId)||{}, ct = contactOf(m)||{}, job = m.jobId&&state.jobs.find(j=>j.id===m.jobId);
+    const k = "out."+m.id+".", draft = take(k+"draft",m.draft||""), subject = take(k+"subject",m.subject||""), followUp = take(k+"followUpDraft",m.followUpDraft||"");
+    const linkedin = m.channel==="linkedin", ck = "ct."+co.id+"."+ct.id+".", note = take(k+"connectNote",m.connectNote||"");
+    const mail = m.channel==="email" && EMAIL_RE.test(ct.email||"") ? `mailto:${ct.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(draft)}` : "";
+    const wa = text => m.channel==="whatsapp" && /^\d{8,15}$/.test(ct.whatsapp||"") ? `https://wa.me/${ct.whatsapp}?text=${encodeURIComponent(text)}` : "";
+    const save = async()=>{ await write(()=>db.doc("outreach/"+m.id).update({subject:take(k+"subject",m.subject||""),draft:take(k+"draft",m.draft||""),connectNote:take(k+"connectNote",m.connectNote||""),followUpDraft:take(k+"followUpDraft",m.followUpDraft||""),updatedAt:new Date().toISOString()}),"Changes saved"); clearDrafts(k); };
+    const statusLine = {draft:linkedin?"Not sent yet. Send the connection request first, or the message if you're already connected.":"Not sent yet. Send it yourself, then click Mark as sent.",
+      requested:`Connection request sent on ${(m.requestedAt||"").slice(0,10)}. Once they accept, send the message and click Mark as sent.`+(m.followUpDate?` Check back on ${m.followUpDate}.`:""),
+      sent:`Sent on ${(m.sentAt||"").slice(0,10)}. `+(m.followUpDate?(m.followUpDate<=today()?"The follow-up is due now.":`Follow up on ${m.followUpDate} if there's no reply.`):""),
+      replied:m.sentAt||m.requestedAt?"They replied. Carry on the conversation yourself.":"They replied before you sent anything. Carry on the conversation yourself.",no_reply:"No reply after the follow-up. This one is closed.",not_interested:"They said no. This one is closed.",not_needed:"Closed without sending. Nothing more to do."}[m.status];
+    const closedApp = job&&job.app&&["rejected","offer"].includes(job.app.status) ? STATUSES.find(s=>s[0]===job.app.status)[1] : "";
+    return h("div",{class:"stack wide"},
+      h("div",{},h("button",{class:"link muted",onclick:()=>open("outreach")},"Outreach"),h("h2",{class:"title"},ct.name||"Contact"),
+        h("p",{class:"muted"},[ct.role,co.name].filter(Boolean).join(" · ")," ",ct.kind&&h("span",{class:"badge b-plain"},KINDS[ct.kind]||ct.kind))),
+      h("div",{class:"cols detail"},
+        h("div",{class:"stack"},
+          linkedin&&(()=>{ const count = h("span",{class:"small "+(note.length>200?"":"muted")},note.length+"/200");
+            return h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"h2"},"Step 1: Connection request"),count),
+              h("p",{class:"small muted"},"On their profile, click Connect, then Add a note, and paste this. Free accounts get only a few notes a month. If you're out, connect without a note."),
+              h("textarea",{class:"field",rows:3,"aria-label":"Connection note",value:note,oninput:e=>{drafts[k+"connectNote"]=e.target.value;const n=e.target.value.length;count.textContent=n+"/200";count.className="small "+(n>200?"":"muted")}}),
+              h("div",{class:"row"},h("button",{class:"btn",onclick:save},"Save changes"),
+                h("button",{class:"btn",onclick:async()=>{ try { await navigator.clipboard.writeText(take(k+"connectNote",m.connectNote||"")); toast("Copied"); } catch { toast("Copy was blocked. Select the text and copy it by hand."); } }},"Copy note"),
+                extLink(ct.linkedinUrl,"Open LinkedIn"))); })(),
+          h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"h2"},linkedin?"Step 2: Message after they accept":"Message"),h("span",{class:"small muted"},(CHANNELS[m.channel]||m.channel)+" · "+(OUT_TYPES.find(x=>x[0]===typeOf(m))?.[1]||typeOf(m)))),
+            h("p",{class:"small muted"},"Click into the text to change it, then Save changes. To have Claude rewrite it, run ",h("kbd",{},"/draft-outreach "+(co.name||"<company>")+(m.jobId?" "+m.jobId:""))," in Claude Code."),
+            m.channel==="email"&&field(k+"subject",m.subject,{label:"Subject"}),
+            field(k+"draft",m.draft,{rows:10,label:"Message"}),
+            h("div",{class:"row"},h("button",{class:"btn primary",onclick:save},"Save changes"),
+              h("button",{class:"btn",onclick:()=>{clearDrafts(k);render(true)}},"Discard changes"))),
+          h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Follow-up message"),h("p",{class:"small muted"},"Send this once if there's no reply by the follow-up date."),
+            field(k+"followUpDraft",m.followUpDraft,{rows:5,label:"Follow-up"}),
+            h("div",{class:"row"},h("button",{class:"btn",onclick:save},"Save changes"),followUp&&copyBtn(followUp,"Copy follow-up"),wa(followUp)&&extLink(wa(followUp),"Open follow-up in WhatsApp")))),
+        h("aside",{class:"stack sticky"},
+          h("section",{class:"card stack-sm"},h("div",{class:"row between"},h("h2",{class:"h2"},"Status"),h("span",{class:"status s-"+OUT_TONE[m.status]},OUT_TAB_TEST.due(m)?"Follow-up due":OUT_LABELS[m.status])),
+            h("p",{class:"muted"},statusLine),
+            m.status==="draft"
+              ? h("div",{class:"stack-sm"},closedApp&&h("p",{class:"small",style:"color:var(--warn)"},`This application is closed (${closedApp}). You probably don't need to send this.`),
+                  h("div",{class:"row"},linkedin&&h("button",{class:closedApp?"btn":"btn primary",onclick:()=>setOutreach(m,"requested")},"I sent the request"),h("button",{class:linkedin||closedApp?"btn":"btn primary",onclick:()=>setOutreach(m,"sent")},linkedin?"Already connected, message sent":"Mark as sent")),
+                  h("p",{class:"small muted"},"Didn't send it?"),
+                  h("div",{class:"row"},h("button",{class:"btn",onclick:()=>setOutreach(m,"replied")},"They replied before I sent it"),h("button",{class:closedApp?"btn primary":"btn",onclick:()=>setOutreach(m,"not_needed")},"Not needed")))
+              : m.status==="requested"
+              ? h("div",{class:"row"},h("button",{class:"btn primary",onclick:()=>setOutreach(m,"sent")},"They accepted, message sent"),h("button",{class:"btn",onclick:()=>setOutreach(m,"draft")},"Unsend (I didn't send it)"))
+              : h("div",{class:"stack-sm"},m.status==="sent"&&h("p",{class:"small muted"},"When you hear back, log it here:"),
+                  h("div",{class:"row"},(m.sentAt?[["replied","They replied"],["no_reply","No reply after follow-up"],["not_interested","Not interested"]]:[["replied","They replied"],["not_interested","Not interested"],["not_needed","Not needed"]]).filter(([s])=>s!==m.status).map(([s,l])=>h("button",{class:"btn",onclick:()=>setOutreach(m,s)},l))),
+                  h("div",{class:"row"},m.status==="sent"?h("button",{class:"btn",onclick:()=>setOutreach(m,"draft")},"Unsend (I didn't send it)")
+                    :(()=>{ const back = m.sentAt?["sent","Back to sent"]:m.requestedAt?["requested","Back to request sent"]:["draft","Back to To send"];
+                        return h("button",{class:"link muted",style:"text-decoration:underline",onclick:()=>setOutreach(m,back[0])},back[1]); })()))),
+          h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Send it"),
+            !canReach(m.channel,ct)&&h("p",{class:"small",style:"color:var(--warn)"},{linkedin:`No LinkedIn profile saved for ${ct.name||"this contact"}. Find them on LinkedIn and paste the profile link under Contact details, or run `,email:`No email address saved for ${ct.name||"this contact"}. Add one under Contact details, or run `,whatsapp:`No WhatsApp number saved for ${ct.name||"this contact"}. Add one under Contact details, or run `}[m.channel]||"",h("kbd",{},"/find-hiring-contact "+(m.jobId||"<job id>")),"."),
+            (()=>{ const alt = Object.keys(CHANNELS).filter(c=>c!==m.channel&&canReach(c,ct));
+              return alt.length>0&&h("div",{class:"row"},alt.map(c=>h("button",{class:"btn small",onclick:()=>write(()=>db.doc("outreach/"+m.id).update({channel:c,updatedAt:new Date().toISOString()}),"Switched to "+CHANNELS[c])},"Send by "+CHANNELS[c]+" instead"))); })(),
+            h("div",{class:"row"},copyBtn(draft),m.channel==="email"&&copyBtn(subject,"Copy subject"),ct.email&&copyBtn(ct.email,"Copy address"),
+              mail&&h("a",{class:"btn",href:mail},"Open in email app"),wa(draft)&&extLink(wa(draft),"Open WhatsApp"),extLink(ct.linkedinUrl,"Open LinkedIn"))),
+          h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"About them"),
+            h("p",{},[ct.email,ct.whatsapp&&"+"+ct.whatsapp].filter(Boolean).join(" · ")||h("span",{class:"muted"},"No email or WhatsApp saved.")),
+            ct.relationship&&h("p",{class:"small muted"},"How you know them: "+ct.relationship),
+            co.fitNotes&&h("p",{class:"small"},co.fitNotes),
+            h("div",{class:"row"},job&&h("button",{class:"btn",onclick:()=>job.app?open("application",{appId:job.id}):open("jobs",{jobId:job.id})},"Job: "+job.title),
+              extLink(co.website,"Company website"),extLink(ct.foundAtUrl,"Where this was found"))),
+          co.id&&ct.id&&h("section",{class:"card stack-sm"},h("h2",{class:"h2"},"Contact details"),h("p",{class:"small muted"},"Add what you find yourself. Use only public or work details."),
+            field(ck+"email",ct.email,{type:"email",label:"Email"}),field(ck+"linkedinUrl",ct.linkedinUrl,{type:"url",label:"LinkedIn profile link"}),field(ck+"whatsapp",ct.whatsapp,{type:"tel",label:"WhatsApp, with country code"}),
+            h("div",{},h("button",{class:"btn",onclick:()=>saveContact(co,ct,ck)},"Save contact details"))))));
+  },
+
+  runs() {
+    const runs = [...state.runs].sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+    const stats = searchStats(), unlinked = state.jobs.filter(j=>!j.runId).length, sum = k => runs.reduce((n,r)=>n+(Number(r[k])||0),0);
+    return h("div",{class:"stack wide"},
+      stats.length>0&&h("section",{class:"stack-sm"},h("h2",{class:"sec"},"Searches"),
+        h("p",{class:"muted"},"Which searches find jobs you can actually get. Change any search marked \u201cChange it\u201d, for example by adding \u201cjunior\u201d or using a keyword from your role list on Strategy."),
+        h("div",{class:"card flush"},h("table",{class:"apps"},h("thead",{},h("tr",{},h("th",{},"Search"),["Jobs","Avg score","50 or more","Best","Too senior or off target"].map(x=>h("th",{class:"r"},x)),h("th",{},"Verdict"))),
+          h("tbody",{},stats.map(s=>h("tr",{onclick:()=>{if(!s.jobs)return;Object.assign(filters,{runs:s.runs,runLabel:s.source+" · "+(s.query||"no query"),show:"active",suggested:false});state.jobId=null;open("jobs")}},
+            h("td",{},h("div",{style:"font-weight:500"},s.query||"No query saved"),h("div",{class:"small muted"},s.source+" · "+s.runs.length+(s.runs.length===1?" run":" runs"))),
+            h("td",{class:"r"},s.jobs),h("td",{class:"r"},s.avg??"–"),h("td",{class:"r"},s.good),h("td",{class:"r"},s.best??"–"),h("td",{class:"r"},s.jobs?Math.round(s.poor/s.jobs*100)+"%":"–"),
+            h("td",{},h("span",{class:"status s-"+s.verdict[1]},s.verdict[0]))))))),
+        unlinked>0&&h("p",{class:"small muted"},`${unlinked} ${unlinked===1?"job isn't":"jobs aren't"} linked to a search yet.`)),
+      h("div",{class:"card flush"},runs.length?h("table",{},h("thead",{},h("tr",{},["When (UTC)","Source","Search","Status"].map(t=>h("th",{},t)),["Found","New","Cost"].map(t=>h("th",{class:"r"},t)))),
+        h("tbody",{},runs.map(r=>h("tr",{},h("td",{style:"white-space:nowrap"},(r.createdAt||"").replace("T"," ").slice(0,16)),h("td",{},r.source),h("td",{},r.query||"–"),
+          h("td",{},h("span",{class:"badge "+(r.status==="failed"?"b-bad":"b-good")},r.status==="failed"?"Failed":"Succeeded"),r.error&&h("div",{class:"small muted"},r.error)),
+          h("td",{class:"r"},r.found??0),h("td",{class:"r"},r.added??0),h("td",{class:"r"},r.costUsd==null?"–":"$"+Number(r.costUsd).toFixed(2))))),
+        h("tfoot",{},h("tr",{},h("td",{colspan:4,style:"font-weight:500;border-top:1px solid var(--line)"},`Total, ${runs.length} ${runs.length===1?"run":"runs"}`),
+          ...[sum("found"),sum("added"),"$"+sum("costUsd").toFixed(2)].map(v=>h("td",{class:"r",style:"font-weight:500;border-top:1px solid var(--line)"},v)))))
+        :h("p",{class:"pad muted"},"No searches yet. In Claude Code, run ",h("kbd",{},"/browse-jobs")," or ",h("kbd",{},"/find-jobs"),".")));
+  },
+
+  /* The profile is edited one section at a time. Typed text is kept while you move between sections, and Save writes
+     every change at once. The strength meter counts only what Claude needs to score jobs and write documents. */
+  profile() {
+    const p = state.profile, f=(key,label,o={})=>field("profile."+key,p[key]==null?"":String(p[key]),{label,...o});
+    const NUMBERS = ["salary_floor_aed","salary_preferred_min_aed","salary_preferred_max_aed","weekly_goal_min","weekly_goal_max","apify_monthly_budget_usd"], URLS = ["linkedin_url","github_url","portfolio_url"];
+    const hint = t=>h("p",{class:"small muted"},t), has = key => p[key]!=null && String(p[key]).trim()!=="";
+    const missing = PROFILE_NEEDS.filter(([key])=>!has(key)), strength = Math.round((PROFILE_NEEDS.length-missing.length)/PROFILE_NEEDS.length*100);
+    const sec = PROFILE_SECTIONS.find(x=>x[0]===profSec) || PROFILE_SECTIONS[0];
+    const save = async e => { e.preventDefault(); const next = {...p};
+      for (const k of Object.keys(drafts)) if (k.startsWith("profile.")) { const key=k.slice(8), v=drafts[k].trim(); next[key]=NUMBERS.includes(key)?(v===""||isNaN(+v)?null:+v):URLS.includes(key)?safeUrl(v):v; }
+      next.updatedAt = new Date().toISOString();
+      await write(()=>db.doc("settings/profile").set(next),"Profile saved"); clearDrafts("profile."); render(true); };
+    const panes = {
+      basics:()=>[h("div",{class:"grid3"},f("full_name","Full name"),f("email","Email",{type:"email"}),f("phone","Phone",{type:"tel"})),
+        h("div",{class:"grid3"},f("linkedin_url","LinkedIn URL",{type:"url"}),f("github_url","GitHub URL",{type:"url"}),f("portfolio_url","Portfolio URL",{type:"url"})),
+        hint("These go at the top of your resumes and in your messages.")],
+      looking:()=>[f("target_roles","Target roles",{rows:2}),f("target_locations","Locations",{rows:2}),f("experience_level","Experience level"),
+        f("work_status","Work status",{rows:2}),hint("Check this wording is accurate. It can appear in your documents."),
+        f("must_haves","Must-haves",{rows:2}),f("deal_breakers","Deal-breakers",{rows:2}),hint("A job that matches a deal-breaker scores 20 or lower.")],
+      pay:()=>[h("div",{class:"grid3"},f("salary_floor_aed","Lowest salary, AED/month",{type:"number"}),f("salary_preferred_min_aed","Preferred from",{type:"number"}),f("salary_preferred_max_aed","Preferred to",{type:"number"})),
+        h("div",{class:"grid3"},f("weekly_goal_min","Weekly applications, minimum",{type:"number"}),f("weekly_goal_max","Weekly applications, maximum",{type:"number"}),f("apify_monthly_budget_usd","Apify budget, USD/month",{type:"number"})),
+        hint("When the month's Apify spend reaches the budget, job searches switch to the free web search.")],
+      proof:()=>[f("skills","Skills",{rows:8}),hint("Only list what you could discuss in an interview."),
+        f("portfolio_projects","Portfolio projects",{rows:8}),hint("For each one: what it does, what you built, and a live link.")],
+      resume:()=>[f("resume_text","Base resume",{rows:22,cls:"code"}),hint("Every tailored resume starts from this text. Add real numbers here when you know them.")],
+    };
+    const dataPane = () => h("section",{class:"card stack-sm"},h("h2",{class:"serif"},"Your data"),
+      h("p",{class:"muted"},"Everything on this dashboard is kept in your private claude.ai page. A backup is one file with all of it."),
+      h("ul",{class:"stand"},[["Jobs",state.jobs.length],["Applications",state.jobs.filter(j=>j.app).length],["Companies",state.companies.length],["Messages",state.outreach.length],["Searches run",state.runs.length]].map(([l,n])=>h("li",{},h("span",{},l),h("span",{},n)))),
+      h("div",{},h("button",{class:"btn primary",type:"button",onclick:backup},"Download a backup")),
+      hint("The file holds your profile, jobs, applications, contacts and messages. Keep it somewhere private. To put a backup back, give the file to Claude Code."));
+    return h("div",{class:"stack wide"},
+      h("p",{class:"muted"},"Claude uses only what's written here for scoring, resumes and outreach, so anything missing won't appear in your documents."),
+      h("div",{class:"cols prof"},
+        h("aside",{class:"stack"},
+          h("div",{class:"stack-sm"},h("div",{class:"row between"},h("span",{class:"small muted"},"Profile strength"),h("span",{style:"font-weight:500"},strength+"%")),
+            h("span",{class:"bar",role:"img","aria-label":"Profile strength "+strength+" percent"},h("i",{style:`width:${strength}%`})),
+            h("p",{class:"small muted"},missing.length ? "Still to add: "+missing.map(x=>x[1]).join(", ")+"." : "Looking good. Claude has what it needs.")),
+          h("div",{class:"pnav",role:"group","aria-label":"Profile sections"},PROFILE_SECTIONS.map(([id,label,keys])=>h("button",{class:"nav",type:"button","aria-current":id===sec[0]?"page":null,onclick:()=>{profSec=id;render(true)}},
+            label,keys.length>0&&h("span",{class:"count"},keys.filter(has).length+"/"+keys.length))))),
+        sec[0]==="data" ? dataPane()
+          : h("form",{class:"card stack-sm",onsubmit:save},h("h2",{class:"serif"},sec[1]),panes[sec[0]](),
+              h("div",{class:"row",style:"margin-top:8px"},h("button",{class:"btn primary",type:"submit"},"Save profile"),
+                Object.keys(drafts).some(k=>k.startsWith("profile."))&&h("button",{class:"btn",type:"button",onclick:()=>{clearDrafts("profile.");render(true)}},"Discard changes")))));
+  },
+};
+views.application.nav = "pipeline";
+views.cvdesign.nav = "pipeline";
+views.message.nav = "outreach";
+
+function jobPanel(j) {
+  return h("aside",{class:"card stack sticky"},
+    h("div",{},h("h2",{class:"h2",style:"font-size:16px"},j.title),h("p",{class:"muted"},[j.company,j.location].filter(Boolean).join(" · "))),
+    j.score==null?empty("Not scored yet. Run ",h("kbd",{},"/score-jobs")," in Claude Code."):
+      h("div",{class:"stack-sm"},h("p",{style:"font-weight:500"},`Chance of getting hired: ${j.score}/100`),h("ul",{class:"bullets"},list(j.reasons).map(r=>h("li",{},r))),list(j.missing).length>0&&h("p",{class:"muted"},"Missing: "+list(j.missing).join(", ")),
+        list(j.requirements).length>0&&h("p",{class:"small muted"},`${list(j.requirements).filter(r=>r&&r.met).length} of ${list(j.requirements).length} requirements covered by your profile`)),
+    h("div",{class:"row"},
+      j.app?h("button",{class:"btn primary",onclick:()=>open("application",{appId:j.id})},"Open application")
+        :!j.hidden&&h("button",{class:"btn primary",onclick:()=>addToPipeline(j)},"Start application"),
+      extLink(j.applyUrl,"View listing"),
+      j.hidden ? h("button",{class:"btn",onclick:async()=>{await updateJob(j.id,restorePatch,"Restored");render(true)}},"Restore")
+        : !j.app&&h("button",{class:"btn","aria-expanded":String(archiveFor===j.id),onclick:()=>{archiveFor=archiveFor===j.id?null:j.id;render(true)}},"Archive")),
+    j.hidden&&h("p",{class:"small muted"},`Archived${j.archivedAt?" on "+j.archivedAt.slice(0,10):""}: ${reasonLabel(j.archiveReason)}.`),
+    !j.hidden&&archiveFor===j.id&&h("div",{class:"stack-sm"},h("p",{class:"small muted"},"Why doesn't it fit?"),
+      h("div",{class:"row",style:"gap:6px"},ARCHIVE_REASONS.map(([r,l])=>h("button",{class:"chip"+(archiveSuggestion(j)===r?" primary":""),onclick:async()=>{archiveFor=null;await archiveJobs([[j,r]],"Archived: "+l.toLowerCase());state.jobId=null;render(true)}},l)))),
+    h("div",{class:"prose scroll sep"},j.description||"No description was scraped."));
+}
+
+/* PDF exports come in twelve designs. Each design is a settings object read by one renderer, so all of them handle
+   the same resume Markdown: "# Name", a subtitle line, contact lines split by " | ", then "## Section",
+   "### Role — Organisation | Dates", "- bullets" and paragraphs. Fonts are jsPDF's built-in Helvetica, Times and
+   Courier, so the text stays selectable for applicant tracking systems. Scraped text never reaches this; only the user's own documents. */
+const CV_BASE = { head:"helvetica", body:"helvetica", align:"center", band:false, details:false, heading:"rule", nameCaps:true,
+  margin:51, top:46, size:9.5, lead:1.34, nameSize:25, secGap:13, entryGap:5, bulletGap:3.5, bullet:"•", sep:"  •  ",
+  layout:"single", order:null, ats:true,
+  c:{ name:[31,51,82], sub:[42,124,127], head:[31,51,82], rule:[42,124,127], bullet:[42,124,127], text:[34,43,54], strong:[31,51,82],
+      grey:[91,101,115], link:[156,197,198], foot:[213,219,225], band:[30,41,59], bandText:[226,232,240], tint:[241,245,249] } };
+const CV_TEMPLATES = [
+  {id:"navy", name:"Navy", note:"Your current CV design"},
+  {id:"classic", name:"Classic Serif", note:"Times, centred name, ruled headings", head:"times", body:"times", size:10, nameCaps:false, nameSize:24, sep:"  |  ",
+    c:{name:[20,20,20], sub:[60,60,60], head:[20,20,20], rule:[20,20,20], bullet:[20,20,20], text:[25,25,25], strong:[20,20,20], grey:[80,80,80], link:[120,120,120], foot:[200,200,200]}},
+  {id:"minimal", name:"Minimal", note:"Black and white, left-aligned", align:"left", heading:"plain", nameCaps:false, nameSize:24, bullet:"–", sep:"  ·  ",
+    c:{name:[17,17,17], sub:[90,90,90], head:[110,110,110], rule:[220,220,220], bullet:[120,120,120], text:[30,30,30], strong:[17,17,17], grey:[100,100,100], link:[170,170,170], foot:[225,225,225]}},
+  {id:"compact", name:"Compact", note:"Tighter spacing to fit one page", margin:40, top:36, size:8.8, lead:1.25, nameSize:20, secGap:8, entryGap:3, bulletGap:1.5,
+    c:{name:[51,65,85], sub:[71,85,105], head:[51,65,85], rule:[148,163,184], bullet:[71,85,105], strong:[30,41,59]}},
+  {id:"accent", name:"Accent Bar", note:"Large name, coloured heading bars", align:"left", heading:"bar", nameCaps:false, nameSize:27,
+    c:{name:[17,24,39], sub:[4,120,87], head:[17,24,39], rule:[4,120,87], bullet:[4,120,87], strong:[17,24,39], link:[110,190,160]}},
+  {id:"projects", name:"Projects First", note:"Projects before experience", align:"left", order:["summary|profile|about","project","skill","experience"],
+    c:{name:[76,29,149], sub:[124,58,237], head:[76,29,149], rule:[167,139,250], bullet:[124,58,237], strong:[76,29,149], link:[196,181,253]}},
+  {id:"mono", name:"Tech Mono", note:"Developer look, mono headings", align:"left", head:"courier", heading:"mono", nameCaps:false, nameSize:23, bullet:">", sep:"  /  ",
+    c:{name:[15,23,42], sub:[22,163,74], head:[22,101,52], rule:[187,247,208], bullet:[22,163,74], strong:[15,23,42], link:[134,239,172]}},
+  {id:"gulf", name:"Gulf Standard", note:"Visa and availability up front", align:"left", details:true, heading:"band", nameCaps:false, nameSize:24,
+    order:["summary|profile|about","experience","project","education","skill","language|leader"],
+    c:{name:[122,28,48], sub:[122,28,48], head:[122,28,48], rule:[122,28,48], bullet:[122,28,48], strong:[60,20,30], tint:[248,241,243], link:[214,160,172]}},
+  {id:"executive", name:"Executive", note:"Serif headings, more white space", head:"times", margin:58, top:52, lead:1.42, nameCaps:false, nameSize:27, secGap:16, heading:"underline",
+    c:{name:[33,37,41], sub:[146,110,40], head:[33,37,41], rule:[146,110,40], bullet:[146,110,40], strong:[33,37,41], link:[210,180,120]}},
+  {id:"timeline", name:"Timeline", note:"Dates in a column on the left", align:"left", layout:"timeline", heading:"underline", nameCaps:false,
+    c:{name:[28,25,23], sub:[194,65,12], head:[28,25,23], rule:[194,65,12], bullet:[194,65,12], strong:[28,25,23], link:[251,176,140]}},
+  {id:"band", name:"Header Band", note:"Your name on a coloured band", align:"left", band:true, nameCaps:false, nameSize:26,
+    c:{name:[255,255,255], sub:[125,211,252], head:[30,41,59], rule:[14,116,144], bullet:[14,116,144], strong:[30,41,59], link:[125,211,252]}},
+  {id:"sidebar", name:"Sidebar", note:"Skills and education in a side column", align:"left", layout:"sidebar", ats:false, nameCaps:false, margin:36,
+    c:{name:[49,46,129], sub:[79,70,229], head:[49,46,129], rule:[165,180,252], bullet:[79,70,229], strong:[49,46,129], tint:[238,242,255], link:[165,180,252]}},
+];
+const cvTemplate = id => { const t = CV_TEMPLATES.find(x=>x.id===id)||CV_TEMPLATES[0]; return {...CV_BASE, ...t, c:{...CV_BASE.c, ...t.c}}; };
+const plainMd = s => String(s).replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1$2").replace(/`([^`]+)`/g,"$1");
+function inlineMd(s) {
+  const out = []; let last = 0; s = plainMd(s);
+  for (const m of s.matchAll(/\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    if (m.index > last) out.push({t:s.slice(last, m.index)});
+    out.push(m[1] != null ? {t:m[1], bold:true} : {t:m[2], url:safeUrl(m[3])||null});
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) out.push({t:s.slice(last)});
+  return out;
+}
+function splitHeader(markdown) {
+  const lines = String(markdown||"").split("\n"), cut = lines.findIndex(l=>/^##\s/.test(l));
+  return { head: lines.slice(0, cut<0?lines.length:cut), body: cut<0?[]:lines.slice(cut) };
+}
+/* Sections are drawn in a column (X to XR) that can run over several pages. The sidebar design draws the main
+   column first, then goes back to page 1 for the side column; new pages get the side background as they're added. */
+const CV_SIDE = /skill|language|education|certif/i;
+function cvPdf(markdown, footerLabel, id) {
+  const t = cvTemplate(id), c = t.c, doc = new window.jspdf.jsPDF({unit:"pt", format:"a4"});
+  const W = 595.28, H = 841.89, L = t.margin, R = W-t.margin, BOTTOM = H-66, SW = 170, DC = 92;
+  let page = 1, y = t.top, X = L, XR = R, section = "", side = false;
+  const font = (fam, style, size) => doc.setFont(fam, style).setFontSize(size);
+  const go = p => { while (doc.getNumberOfPages() < p) { doc.addPage(); if (side) { doc.setFillColor(...c.tint); doc.rect(0, 0, L+SW, H, "F"); } } doc.setPage(p); page = p; };
+  const need = h => { if (y + h > BOTTOM) { go(page+1); y = t.top; } };
+  function rich(segs, {x=X, width=XR-x, size=t.size, lead=size*t.lead, color=c.text, bold=c.strong, style="normal", align="left", fam=t.body, link=c.link, dry=false}={}) {
+    const words = [];
+    for (const sg of segs) for (const w of sg.t.split(/(\s+)/)) if (w) words.push({...sg, t:/^\s+$/.test(w)?" ":w});
+    const measure = w => { font(w.fam||fam, w.bold?"bold":style, size); return doc.getTextWidth(w.t); };
+    const lines = []; let line = [], lw = 0;
+    const flush = () => { while (line.length && line[line.length-1].t===" ") lw -= line.pop().w; if (line.length) lines.push([line, lw]); line = []; lw = 0; };
+    for (const w of words) { const ww = measure(w); if (w.t===" " && !line.length) continue; if (w.t!==" " && lw+ww > width && line.length) flush(); if (w.t===" " && !line.length) continue; line.push({...w, w:ww}); lw += ww; }
+    flush();
+    if (dry) return lines.length;
+    for (const [ln, width0] of lines) {
+      need(lead); let cx = align==="center" ? x+(width-width0)/2 : x; const base = y + size*0.86;
+      for (const w of ln) {
+        font(w.fam||fam, w.bold?"bold":style, size); doc.setTextColor(...(w.bold?bold:color)); doc.text(w.t, cx, base);
+        if (w.url && w.t!==" ") { doc.setDrawColor(...link); doc.setLineWidth(.6); doc.line(cx, base+1.8, cx+w.w, base+1.8); doc.link(cx, base-size, w.w, size+3, {url:w.url}); }
+        cx += w.w;
+      }
+      y += lead;
+    }
+    return lines.length;
+  }
+
+  const { head, body } = splitHeader(markdown);
+  let name = "", subtitle = "", extra = [];
+  for (const raw of head) { const l = raw.trim(); if (!l) continue;
+    const m = l.match(/^#\s+(.*)$/); if (m) { name = plainMd(m[1]); continue; }
+    if (!subtitle && !/[|@]/.test(l)) { subtitle = plainMd(l); continue; } extra.push(l); }
+  const contact = l => { const segs = []; l.split(/\s+\|\s+|\s+·\s+/).forEach((part, k) => { if (k) segs.push({t:t.sep}); segs.push(...inlineMd(part)); }); return segs; };
+  const centre = t.align==="center", hx = centre ? W/2 : L, al = centre ? "center" : "left", small = 8.8;
+  if (t.band) {
+    const rows = extra.reduce((n, l) => n + rich(contact(l), {x:L, width:R-L, size:small, dry:true}), 0);
+    doc.setFillColor(...c.band); doc.rect(0, 0, W, t.top + t.nameSize*1.2 + (subtitle?16:0) + rows*small*t.lead + 22, "F");
+  }
+  if (name) { font(t.head, "bold", t.nameSize); doc.setTextColor(...c.name);
+    doc.text(t.nameCaps ? name.toUpperCase() : name, hx, y + t.nameSize*0.88, {align:al, charSpace:t.nameCaps ? .5 : 0}); y += t.nameSize*1.2; }
+  if (subtitle) { font(t.head, "bold", 9.5); doc.setTextColor(...c.sub); doc.text(subtitle.toUpperCase(), hx, y+9, {align:al, charSpace:.6}); y += 16; }
+  if (t.details && extra.length) {
+    const rows = extra.reduce((n, l) => n + rich(contact(l), {x:L+12, width:R-L-24, size:small, dry:true}), 0), bh = rows*small*t.lead + 14;
+    y += 4; doc.setFillColor(...c.tint); doc.rect(L, y, R-L, bh, "F"); doc.setFillColor(...c.rule); doc.rect(L, y, 2.5, bh, "F");
+    y += 7; extra.forEach(l => rich(contact(l), {x:L+12, width:R-L-24, size:small, color:c.text})); y += 7;
+  } else extra.forEach((l, n) => { y += n ? 1 : 3;
+    rich(contact(l), {x:L, width:R-L, size:small, color:t.band ? c.bandText : c.grey, align:al}); });
+  if (t.band) y += 26;
+
+  let secs = [];
+  for (const raw of body) { const l = raw.trim(), m = l.match(/^##\s+(.*)$/); if (m) secs.push({title:m[1], lines:[]}); else if (l && secs.length) secs[secs.length-1].lines.push(l); }
+  if (t.order) { const rank = s => { const i = t.order.findIndex(p => new RegExp(p, "i").test(s.title)); return i < 0 ? t.order.length : i; };
+    secs = secs.map((s, i) => [s, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]); }
+
+  function heading(title) {
+    const text = plainMd(title).toUpperCase();
+    y += t.secGap; need(42); doc.setTextColor(...c.head);
+    if (t.heading==="plain") { font(t.head, "bold", 8.5); doc.text(text, X, y+9, {charSpace:1.2}); doc.setDrawColor(...c.rule); doc.setLineWidth(.5); doc.line(X, y+14, XR, y+14); y += 21; }
+    else if (t.heading==="bar") { doc.setFillColor(...c.rule); doc.rect(X, y+1, 4, 12, "F"); font(t.head, "bold", 11); doc.text(text, X+10, y+11, {charSpace:.4}); y += 22; }
+    else if (t.heading==="mono") { font("courier", "bold", 10.5); doc.text("// "+text, X, y+10); doc.setDrawColor(...c.rule); doc.setLineWidth(.75); doc.line(X, y+15, XR, y+15); y += 23; }
+    else if (t.heading==="band") { doc.setFillColor(...c.tint); doc.rect(X, y, XR-X, 18, "F"); doc.setFillColor(...c.rule); doc.rect(X, y, 3, 18, "F");
+      font(t.head, "bold", 10.5); doc.setTextColor(...c.head); doc.text(text, X+10, y+12.5, {charSpace:.4}); y += 26; }
+    else if (t.heading==="underline") { font(t.head, "bold", 11.5); doc.text(text, X, y+11, {charSpace:.4}); doc.setDrawColor(...c.rule); doc.setLineWidth(2); doc.line(X, y+17, X+36, y+17); y += 25; }
+    else { font(t.head, "bold", 11); doc.text(text, X, y+10, {charSpace:.4}); doc.setDrawColor(...c.rule); doc.setLineWidth(1); doc.line(X, y+16, XR, y+16); y += 24; }
+  }
+  // Timeline puts dates in a left column; a narrow column puts them on their own line instead of on the right.
+  function dated(title, dates, size, gap) {
+    const tl = t.layout==="timeline" && !side, narrow = XR - X < 260, x = tl ? X + DC : X;
+    font(t.head, "bold", size); doc.setTextColor(...c.strong);
+    const lines = doc.splitTextToSize(plainMd(title), XR - x - (dates && !tl && !narrow ? 110 : 0));
+    doc.text(lines, x, y + size*0.92);
+    if (dates) { font(t.body, "italic", tl ? 8.5 : t.size); doc.setTextColor(...c.grey);
+      if (tl) doc.text(doc.splitTextToSize(plainMd(dates), DC-12), X, y + size*0.92);
+      else if (!narrow) doc.text(plainMd(dates), XR, y + size*0.92, {align:"right"}); }
+    y += gap*lines.length;
+    if (dates && narrow && !tl) rich([{t:plainMd(dates)}], {x, width:XR-x, color:c.grey, style:"italic", size:t.size-.5});
+    return x;
+  }
+  function draw(list) {
+    for (const s of list) {
+      section = s.title; heading(section);
+      const bx = t.layout==="timeline" && !side ? X + DC : X;
+      for (const l of s.lines) {
+        let m;
+        if ((m = l.match(/^###\s+(.*)$/))) {
+          const parts = m[1].split(/\s+\|\s+/), dates = parts.length>1 ? parts.pop() : "", [role, org] = parts.join(" | ").split(/\s+[—–]\s+/);
+          y += t.entryGap; need(40);
+          const x = dated(role, dates, t.size+.5, 13);
+          if (org) rich(inlineMd(org), {x, width:XR-x, color:c.grey, style:"italic"}); y += 3; continue;
+        }
+        if ((m = l.match(/^[-*]\s+(.*)$/))) {
+          const text = m[1];
+          if (/education/i.test(section)) { const e = text.match(/^(.*?)\s+\|\s+([^|]*\d{4}[^|]*)$/);
+            if (e) { const [title, place] = e[1].split(/\s+[—–]\s+/); need(28);
+              const x = dated(title, e[2], t.size, 12.5);
+              if (place) rich(inlineMd(place), {x, width:XR-x, color:c.grey}); y += 5; continue; } }
+          let segs = inlineMd(text); const kv = text.match(/^([A-Z][^:*\[\]]{1,40}):\s+(.*)$/);
+          if (kv && !/\*\*/.test(text)) segs = [{t:kv[1]+": ", bold:true, fam:t.heading==="mono" ? "courier" : undefined}, ...inlineMd(kv[2])];
+          need(13); font(t.body, "bold", 9); doc.setTextColor(...c.bullet); doc.text(t.bullet, bx+3, y+8.2);
+          rich(segs, {x:bx+14, width:XR-bx-14}); y += t.bulletGap; continue;
+        }
+        rich(inlineMd(l), {x:bx, width:XR-bx}); y += 4;
+      }
+    }
+  }
+  const sideSecs = t.layout==="sidebar" ? secs.filter(s => CV_SIDE.test(s.title)) : [];
+  if (sideSecs.length) {
+    const top = y + 6;
+    doc.setFillColor(...c.tint); doc.rect(0, top, L+SW, H-top, "F"); side = true;
+    X = L+SW+18; XR = R; y = top - t.secGap + 4; draw(secs.filter(s => !sideSecs.includes(s)));
+    go(1); X = L; XR = L+SW-16; y = top - t.secGap + 4; draw(sideSecs);
+  } else draw(secs);
+
+  const pages = doc.internal.getNumberOfPages();
+  for (let n = 1; n <= pages; n++) {
+    doc.setPage(n); doc.setDrawColor(...c.foot); doc.setLineWidth(.75); doc.line(L, H-46, R, H-46);
+    font(t.body, "normal", 7.5); doc.setTextColor(...c.grey);
+    doc.text(`${(name||"Curriculum vitae").toUpperCase()}  ·  ${footerLabel}`, L, H-34, {charSpace:.4});
+    doc.text(`PAGE ${n}`, R, H-34, {align:"right", charSpace:.4});
+  }
+  return doc;
+}
+/* The cover letter uses the resume's header (name, subtitle, contact line) so both files look like one set. */
+function coverMd(resume, letter, job) {
+  const date = new Date().toLocaleDateString("en-GB", {day:"numeric", month:"long", year:"numeric"});
+  const head = splitHeader(resume).head.join("\n").trim() || `# ${state.profile.full_name||"Your name"}`;
+  return `${head}\n\n## Cover letter\n\n${date}\n\n**${job.title||"Role"}${job.company?" at "+job.company:""}**\n\n${String(letter||"").trim()}\n`;
+}
+async function exportPdf(j, kind, resume, letter, id) {
+  if (!downloads) return toast("Downloads aren't available in this view.");
+  if (!window.jspdf) return toast("The PDF tool didn't load. Reload the page and try again.");
+  if (!String(kind==="resume"?resume:letter||"").trim()) return toast(kind==="resume"?"There's no resume to export yet.":"There's no cover letter to export yet.");
+  const name = (String(resume).match(/^#\s+(.+)$/m)?.[1] || state.profile.full_name || "CV").trim();
+  const doc = kind==="resume" ? cvPdf(resume, "CURRICULUM VITAE", id) : cvPdf(coverMd(resume, letter, j), "COVER LETTER", id);
+  const clean = s => String(s||"").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim().slice(0,60);
+  const filename = `${today()} - ${clean(name)} ${kind==="resume"?"CV":"Cover Letter"} - ${clean(j.company||"Company")} - ${clean(j.title||"Role")}.pdf`;
+  try { await downloads.save({filename, data:doc.output("arraybuffer")}); toast("PDF saved"); return true; }
+  catch (e) { if (e.code!=="declined") toast("The PDF couldn't be saved here."); return false; }
+}
+
+/* The design gallery draws each PDF with pdf.js, so the preview is the exact file that downloads. pdf.js loads only
+   when the gallery opens; loading its worker script on the page lets it run on the main thread, which the sandbox allows. */
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfjsReady = null, shotGen = 0;
+const loadScript = src => new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s); });
+const pdfjs = () => pdfjsReady ||= loadScript(PDFJS+"pdf.min.js").then(()=>loadScript(PDFJS+"pdf.worker.min.js"))
+  .then(()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS+"pdf.worker.min.js"; return window.pdfjsLib; })
+  .catch(e=>{ pdfjsReady = null; throw e; });
+const cvShots = new Map();
+const hashStr = s => { let n = 5381; for (let i = 0; i < s.length; i++) n = (n*33 ^ s.charCodeAt(i)) >>> 0; return n.toString(36); };
+const shotKey = (md, label, id, width, all) => [id, label, width, all?1:0, hashStr(md)].join("|");
+async function cvShot(md, label, id, width, all) {
+  const key = shotKey(md, label, id, width, all);
+  if (cvShots.has(key)) return cvShots.get(key);
+  const lib = await pdfjs(), pdf = await lib.getDocument({data:cvPdf(md, label, id).output("arraybuffer")}).promise, urls = [];
+  for (let n = 1; n <= (all ? pdf.numPages : 1); n++) {
+    const pg = await pdf.getPage(n), ratio = Math.min(2, window.devicePixelRatio||1), vp = pg.getViewport({scale:width*ratio/pg.getViewport({scale:1}).width});
+    const cv = document.createElement("canvas"); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+    await pg.render({canvasContext:ctx, viewport:vp}).promise; urls.push(cv.toDataURL("image/jpeg", .88));
+  }
+  const shot = {count:pdf.numPages, urls}; pdf.destroy(); cvShots.set(key, shot); return shot;
+}
+/* Runs the drawing jobs one at a time; a newer render of the gallery cancels the older queue. */
+function queueShots(jobs, onFail) {
+  const gen = ++shotGen;
+  (async () => {
+    try { await pdfjs(); } catch { return onFail(); }
+    for (const job of jobs) { if (gen !== shotGen) return; try { await job(); } catch {} await new Promise(r => setTimeout(r)); }
+  })();
+}
+/* Bullet check for experience bullets: an action verb first, tools from the Skills section, and a number.
+   It only points out what's missing; numbers must come from real results, never estimates. */
+const IRREGULAR = new Set("built led ran made won wrote grew cut set drove taught sold brought began held kept met took gave found shipped".split(" "));
+function bulletCheck(md) {
+  const lines = String(md||"").split("\n"); let sec = ""; const terms = new Set(), bullets = [];
+  for (const raw of lines) { const l = raw.trim(), m = l.match(/^##\s+(.*)$/); if (m) { sec = m[1]; continue; }
+    const b = l.match(/^[-*]\s+(.*)$/); if (!b) continue;
+    if (/skill/i.test(sec)) { const v = plainMd(b[1]).replace(/^[^:]{1,40}:\s*/, ""); v.split(/\s*[·,;|]\s*/).map(x=>x.replace(/\(.*?\)/g,"").trim()).filter(x=>x.length>1&&x.length<30).forEach(x=>terms.add(x)); }
+    if (/experience|employment|work/i.test(sec)) bullets.push(plainMd(b[1]).replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/\*\*/g,"")); }
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pat = new RegExp(`(\\b\\d[\\d,.]*(?:\\s?%|\\+|k\\b)?)${terms.size?`|(?<![\\w])(${[...terms].sort((a,b)=>b.length-a.length).map(esc).join("|")})(?![\\w])`:""}`, "gi");
+  return bullets.map(text => {
+    const first = text.match(/^[A-Za-z]+/)?.[0]||"", verb = /ed$/i.test(first) || IRREGULAR.has(first.toLowerCase());
+    const parts = []; let last = 0, number = false, tools = 0;
+    if (verb) { parts.push({t:first, k:"verb"}); last = first.length; }
+    const off = last;
+    for (const m of text.slice(off).matchAll(pat)) { const at = off + m.index;
+      if (at > last) parts.push({t:text.slice(last, at)}); parts.push({t:m[0], k:m[1] ? "num" : "tool"}); if (m[1]) number = true; else tools++; last = at + m[0].length; }
+    if (last < text.length) parts.push({t:text.slice(last)});
+    return {parts, verb, number, tools};
+  });
+}
+
+function renderNav() {
+  const nav = document.getElementById("nav"), current = views[state.view].nav||state.view, p = state.profile;
+  const counts = { jobs: state.jobs.filter(j=>!j.hidden && j.score==null).length, pipeline: state.jobs.filter(j=>j.app).length, outreach: state.outreach.filter(m=>m.status==="draft").length }, idleN = idleContacts().length;
+  nav.replaceChildren(
+    h("span",{class:"brand"},h("span",{class:"mark","aria-hidden":"true"},"J"),"Job Hunt"),
+    h("button",{class:"btn primary newapp",onclick:()=>{resetJobFilters();state.jobId=null;open("jobs");toast("Pick a job, then choose Start application.")}},"+ New application"),
+    ...NAV.map(n=>typeof n==="string" ? h("span",{class:"side-label"},n) : n ? h("button",{class:"nav","aria-current":n[0]===current?"page":null,onclick:()=>{ open(n[0]); try{history.replaceState(null,"","#"+n[0])}catch{} }},icon(n[2]),n[1],counts[n[0]]>0&&h("span",{class:"count",title:n[0]==="outreach"?"Messages to send":null},counts[n[0]]),
+        n[0]==="outreach"&&idleN>0&&h("span",{class:"count dim",title:idleN+" contacts found with no message yet","aria-label":idleN+" contacts with no message yet"},"+"+idleN))
+      : h("span",{class:"side-div"})),
+    state.loaded&&h("div",{class:"side-foot"},h("span",{class:"avatar round"},String(p.full_name||"You").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()),
+      h("div",{style:"min-width:0"},h("div",{style:"font-weight:500"},p.full_name||"Your profile"),h("div",{class:"small muted"},progress().week+" applied this week"))));
+}
+function renderTop() {
+  const top = document.getElementById("top"), due = state.loaded ? dueItems().length : 0;
+  top.replaceChildren(h("h1",{},state.view==="overview"&&state.loaded?greeting():TITLES[state.view]||""),
+    h("form",{class:"search",role:"search",onsubmit:e=>{e.preventDefault();searchJobs(topQ.trim())}},icon("search",16),
+      h("input",{type:"search",placeholder:"Search by title, company…","aria-label":"Search jobs by title or company",value:topQ,oninput:e=>{topQ=e.target.value}})),
+    h("button",{class:"iconbtn","aria-label":due?due+" follow-ups due":"No follow-ups due",title:due?due+" follow-ups due":"No follow-ups due",onclick:()=>{open("overview");setTimeout(()=>document.getElementById("followups")?.scrollIntoView({behavior:"smooth"}),0)}},icon("bell"),due>0&&h("span",{class:"pip"})));
+}
+/* Typing is never interrupted: a live update waits until the field loses focus. Unsaved text lives in drafts. */
+function render(force) {
+  const active = document.activeElement, main = document.getElementById("main"), zone = document.querySelector(".content");
+  if (!force && active && zone.contains(active) && active.matches("input:not([type=checkbox]),textarea,select")) { pending = true; return; }
+  pending = false;
+  renderNav(); renderTop();
+  if (state.unavailable) return main.replaceChildren(h("div",{class:"card narrow"},h("p",{style:"font-weight:500"},"Your job data can't be opened in this view."),h("p",{class:"muted"},"Open this page on claude.ai while signed in to the account that owns it.")));
+  if (!state.loaded) return main.replaceChildren(h("p",{class:"muted"},state.slow?"Your data can't be reached yet. It will appear once the connection returns.":"Loading your job search…"));
+  const board = document.getElementById("board"), left = board?board.scrollLeft:0;
+  main.replaceChildren(views[state.view]());
+  const next = document.getElementById("board"); if (next) next.scrollLeft = left;
+}
+document.addEventListener("focusout",()=>setTimeout(()=>{ if (pending) render(); },0));
+
+async function start() {
+  const hash = location.hash.slice(1); if (NAV.some(n=>n&&n[0]===hash)) state.view = hash;
+  renderNav(); renderTop();
+  db = await claude?.use?.("db").catch?.(()=>null) ?? null;
+  downloads = await claude?.use?.("downloads").catch?.(()=>null) ?? null;
+  if (!db) { state.unavailable = true; return render(true); }
+  const slow = setTimeout(()=>{ state.slow = true; render(); },10000);
+  const ready = new Set(), need = 5;
+  const mark = (name,snap)=>{ if (!snap.metadata.fromCache) ready.add(name); if (ready.size>=need && !state.loaded) { state.loaded = true; clearTimeout(slow); } render(); };
+  const fail = e=>{ clearTimeout(slow); if (e.code==="revoked"||e.code==="not_granted") { state.unavailable = true; render(true); } else toast("Live updates stopped. Reload to reconnect."); };
+  for (const name of ["jobs","companies","outreach","runs"])
+    db.collection(name).onSnapshot(s=>{ state[name] = s.docs.map(d=>({id:d.id,...d.data()})); mark(name,s); },fail);
+  db.collection("settings").onSnapshot(s=>{ const by = Object.fromEntries(s.docs.map(d=>[d.id,d.data()])); state.settings = by; state.profile = by.profile||{}; state.brief = by.brief||null; mark("settings",s); },fail);
+}
+window.claude ? start() : (state.unavailable = true, render(true));
+</script>

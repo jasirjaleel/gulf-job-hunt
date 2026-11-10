@@ -1,0 +1,16 @@
+{
+  "name": "job-hunt-platform",
+  "version": "0.2.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "hunt": "node --env-file-if-exists=.env.local scripts/hunt.ts",
+    "cv": "node scripts/build-cv.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5"
+  }
+}

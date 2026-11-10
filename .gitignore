@@ -1,0 +1,14 @@
+/node_modules
+.DS_Store
+*.tsbuildinfo
+
+# secrets
+.env*
+!.env.example
+
+# personal settings: your dashboard link and your own wording rules
+CLAUDE.local.md
+.claude/settings.local.json
+
+# local copy of the dashboard's data, and files waiting to be sent to it
+/data/
