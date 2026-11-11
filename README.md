@@ -126,7 +126,7 @@ You're responsible for how you use this, including the terms of the job sites an
 
 ## Credits
 
-- The board, funnel and application pages were inspired by [Dossier](https://github.com/AienTech/dossier), a self-hosted job search app. No code from Dossier is used here.
+- Inspired by [Dossier](https://github.com/AienTech/dossier).
 - PDFs are made with [jsPDF](https://github.com/parallax/jsPDF) and previewed with [PDF.js](https://github.com/mozilla/pdf.js). The dashboard uses the [Newsreader](https://fonts.google.com/specimen/Newsreader) and [Geist](https://fonts.google.com/specimen/Geist) typefaces.
 
 ## Licence
